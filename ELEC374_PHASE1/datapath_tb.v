@@ -6,9 +6,9 @@ module datapath_tb;
     reg Clock;
     reg [31:0] Mdatain;
 
-    parameter   Default = 4’b0000, Reg_load1a = 4’b0001, Reg_load1b = 4’b0010, Reg_load2a = 4’b0011,
-                Reg_load2b = 4’b0100, Reg_load3a = 4’b0101, Reg_load3b = 4’b0110, T0 = 4’b0111,
-                T1 = 4’b1000, T2 = 4’b1001, T3 = 4’b1010, T4 = 4’b1011, T5 = 4’b1100;
+    parameter   Default = 4'b0000, Reg_load1a = 4'b0001, Reg_load1b = 4'b0010, Reg_load2a = 4'b0011,
+                Reg_load2b = 4'b0100, Reg_load3a = 4'b0101, Reg_load3b = 4'b0110, T0 = 4'b0111,
+                T1 = 4'b1000, T2 = 4'b1001, T3 = 4'b1010, T4 = 4'b1011, T5 = 4'b1100;
     reg [3:0] Present_state = Default;
 
 Datapath DUT(PCout, Zlowout, MDRout, R5out, R6out, MARin, Zin, PCin, MDRin, IRin, Yin, IncPC, Read, AND, R2in,
@@ -48,10 +48,10 @@ always @(Present_state) // do the required job in each state
                 R3out <= 0; R7out <= 0; MARin <= 0; Zin <= 0;
                 PCin <=0; MDRin <= 0; IRin <= 0; Yin <= 0;
                 IncPC <= 0; Read <= 0; AND <= 0;
-                R2in <= 0; R5in <= 0; R6in <= 0; Mdatain <= 32’h00000000;
+                R2in <= 0; R5in <= 0; R6in <= 0; Mdatain <= 32'h00000000;
             end
             Reg_load1a: begin
-                Mdatain <= 32’h00000034;
+                Mdatain <= 32'h00000034;
                 Read = 0; MDRin = 0; // the first zero is there for completeness
                 Read <= 1; MDRin <= 1; // Took out #15 for '1', as it may not be needed
                 #15 Read <= 0; MDRin <= 0; // for your current implementation
@@ -61,7 +61,7 @@ always @(Present_state) // do the required job in each state
                 #15 MDRout <= 0; R5in <= 0; // initialize R5 with the value 0x34
             end
             Reg_load2a: begin
-                Mdatain <= 32’h00000045;
+                Mdatain <= 32'h00000045;
                 Read <= 1; MDRin <= 1;
                 #15 Read <= 0; MDRin <= 0;
             end
@@ -70,7 +70,7 @@ always @(Present_state) // do the required job in each state
                 #15 MDRout <= 0; R6in <= 0; // initialize R6 with the value 0x45
             end
             Reg_load3a: begin
-                Mdatain <= 32’h00000067;
+                Mdatain <= 32'h00000067;
                 Read <= 1; MDRin <= 1;
                 #15 Read <= 0; MDRin <= 0;
             end
@@ -84,7 +84,7 @@ always @(Present_state) // do the required job in each state
             end
             T1: begin
                 Zlowout <= 1; PCin <= 1; Read <= 1; MDRin <= 1;
-                Mdatain <= 32’h112B0000; // opcode for “and R2, R5, R6”
+                Mdatain <= 32'h112B0000; // opcode for “and R2, R5, R6”
             end
             T2: begin
                 MDRout <= 1; IRin <= 1; 
@@ -101,3 +101,14 @@ always @(Present_state) // do the required job in each state
         endcase
     end
 endmodule
+
+initial begin
+    $dumpfile("datapath_tb.v");
+    $dumpvars;
+end
+
+initial begin
+    #127500;
+    $display("Simulation complete.");
+    $finish;
+end

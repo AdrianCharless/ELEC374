@@ -1,5 +1,5 @@
 module register #(parameter DATA_WIDTH_IN = 32, DATA_WIDTH_OUT = 8, INIT = 32'h0)(
-    intput clear, clock, enable,
+    input clear, clock, enable,
     input [DATA_WIDTH_IN-1:0]BusMuxOut,
     output wire[DATA_WIDTH_OUT-1:0]BusMuxIn
 );

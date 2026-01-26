@@ -4,9 +4,9 @@
  {
  "label": "Run Verilog Simulation",
  "type": "shell",
- "command": "iverilog -o simulation_bin.out main_design.v helper_module.v design_tb.v && vvp simulation_bin.out && gtkwave waveforms.vcd view_settings.gtkw",
+ "command": "iverilog -o simulation_bin.out datapath.v register.v bus.v adder.v datapath_tb.v && vvp simulation_bin.out && gtkwave waveforms.vcd",
  "options": {
- "cwd": "${workspaceFolder}/Verilog_Project"
+ "cwd": "${workspaceFolder}/ELEC374_PHASE1"
  },
  "group": {
  "kind": "build",
