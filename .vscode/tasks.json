@@ -1,18 +1,23 @@
 {
- "version": "2.0.0",
- "tasks": [
- {
- "label": "Run Verilog Simulation",
- "type": "shell",
- "command": "iverilog -o simulation_bin.out datapath.v registers/*.v memory/*.v bus/BUS.v alu/*.v tb && vvp simulation_bin.out && gtkwave waveforms.vcd",
- "options": {
- "cwd": "${workspaceFolder}/ELEC374_PHASE1"
- },
- "group": {
- "kind": "build",
- "isDefault": true
- },
- "problemMatcher": []
- }
- ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Verilog Simulation (Phase 1)",
+      "type": "shell",
+      "command": "iverilog -g2012 -o simulation_bin.out datapath.v registers/*.v memory/*.v bus/BUS.v alu/*.v tb/datapath_tb.v && vvp simulation_bin.out && gtkwave waveforms.vcd",
+      "options": {
+        "cwd": "${workspaceFolder}/ELEC374_PHASE1"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    }
+  ]
 }

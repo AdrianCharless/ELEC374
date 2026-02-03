@@ -105,9 +105,10 @@ always @(Present_state) // do the required job in each state
 endmodule
 
 initial begin
-    $dumpfile("and_tb.vcd");
-    $dumpvars;
+    $dumpfile("waveforms.vcd");
+    $dumpvars(0, and_tb);
 end
+
 
 initial begin
     #127500;
