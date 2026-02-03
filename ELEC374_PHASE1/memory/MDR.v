@@ -8,7 +8,7 @@ module MDR(
     input [31:0]	BusMuxOut,
     input [31:0]	Mdatain,	
 
-    output [31:0]	BusMuxIn-MDR
+    output [31:0]	BusMuxIn_MDR
 ); // all input and output wires in module
 
 wire [31:0] D_to_MDR;	// wire from mux output to register input
@@ -24,12 +24,12 @@ MDMux mdmux(		// module_type instance_name (port_connections);
 	// (D_to_MDR)	= wire in current module
 );
 
-register #(.DATA_WIDTH_IN(32), .DATA_WIDTH_OUT(32), .INIT(0)) mdreg(
+Register #(.DATA_WIDTH_IN(32), .DATA_WIDTH_OUT(32), .INIT(0)) mdreg(
 	.clear(clear),
 	.clock(clock),
 	.enable(MDRin),
 	.RegIn(D_to_MDR),
-	.BusMuxIn(BusMuxIn-MDR)
+	.BusMuxIn(BusMuxIn_MDR)
 );
 
 endmodule

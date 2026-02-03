@@ -1,4 +1,4 @@
-module half_adder (
+module HalfAdder (
 	input	a,
 	input	b,
 	output	sum,

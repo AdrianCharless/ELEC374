@@ -1,11 +1,11 @@
-// DIV_restoring_32.v
+// DIV32.v
 // Unsigned 32-bit restoring division (combinational - no clock)
 // quotient = dividend / divisor
 // remainder = dividend % divisor
 //
 // Fully combinational: result available after propagation delay
 
-module DIV_restoring_32 (
+module DIV (
 	input  wire [31:0] dividend,
 	input  wire [31:0] divisor,
 

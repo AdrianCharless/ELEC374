@@ -1,3 +1,5 @@
+// not using, just for conceptual learning
+
 module Encoder32to5(
 	input R0out, R1out, R2out, R3out, R4out, R5out, R6out, R7out,
 	input R8out, R9out, R10out, R11out, R12out, R13out, R14out, R15out,

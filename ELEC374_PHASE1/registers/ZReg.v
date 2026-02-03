@@ -1,9 +1,9 @@
-module ZReg (
+module ZREG (
 	input			clear, clock, Zenable,
-	input	[63:0]	Zin,
+	input	[63:0]	Zinput,
 	//output	[63:0]	Z, just for debugging purposes
-	output	[31:0]	Zhi,
-	output	[31:0]	Zlo
+	output	[31:0]	ZHI,
+	output	[31:0]	ZLO
 );
 
 reg [63:0] q;
@@ -18,7 +18,7 @@ always @(posedge clock) begin
 end
 
 //assign Z		= q;
-assign Zlo		= q[31:0];
-assign Zhi		= q[63:32];
+assign ZLO		= q[31:0];
+assign ZHI		= q[63:32];
 
 endmodule

@@ -1,4 +1,5 @@
-module rotate_right(
+// rotate right
+module ROR(
     input [31:0] A,           // Value to rotate
     input [31:0] count,       // How many positions to rotate
     output [31:0] Result      // Rotated result

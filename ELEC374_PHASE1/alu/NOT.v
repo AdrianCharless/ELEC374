@@ -1,4 +1,5 @@
-module not_operation(
+// not operation
+module NOT(
     input wire [31:0] A,
     output wire [31:0] result
 );

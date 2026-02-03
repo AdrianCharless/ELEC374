@@ -1,3 +1,5 @@
+// not using, just for conceptual learning
+
 module BusMux(
 	input [31:0]	BusMuxIn_R0,
 	input [31:0]	BusMuxIn_R1,

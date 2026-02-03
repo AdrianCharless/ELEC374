@@ -1,4 +1,4 @@
-module register #(parameter DATA_WIDTH_IN = 32, DATA_WIDTH_OUT = 32, INIT = 0)(
+module Register #(parameter DATA_WIDTH_IN = 32, DATA_WIDTH_OUT = 32, INIT = 0)(
 // parameters are just variables you can define so that you dont have to
 // keep manually change the number for EVERY instance
 	input						clear, clock, enable, 

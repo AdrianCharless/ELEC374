@@ -1,20 +1,20 @@
 //bi-directional bus 
 
-module Bus (
+module BUS (
     //Mux
     input [31:0]BusMuxInR0, input [31:0]BusMuxInR1, input [31:0]BusMuxInR2, input [31:0]BusMuxInR3, 
 	 input [31:0]BusMuxInR4, input [31:0]BusMuxInR5, input [31:0]BusMuxInR6, input [31:0]BusMuxInR7, 
 	 input [31:0]BusMuxInR8, input [31:0]BusMuxInR9, input [31:0]BusMuxInR10, input [31:0]BusMuxInR11, 
 	 input [31:0]BusMuxInR12, input [31:0]BusMuxInR13, input [31:0]BusMuxInR14, input [31:0]BusMuxInR15,
 	 input [31:0]BusMuxInHI, input [31:0]BusMuxInLO,
-	 input [31:0]BusMuxInZhigh, input [31:0]BusMuxInZlow,
+	 input [31:0]BusMuxInZHI, input [31:0]BusMuxInZLO,
 	 input [31:0]BusMuxInPC, input [31:0]BusMuxInMDR, 
 	 input [31:0]BusMuxInInPort, 
 	 input [31:0]C_sign_extended,
 	 
 	 input R0out, R1out, R2out, R3out, R4out, R5out, R6out, R7out,  
 	 input R8out, R9out, R10out, R11out, R12out, R13out, R14out, R15out,
-	 input HIout, LOout, Zhighout, Zlowout,
+	 input HIout, LOout, ZHIout, ZLOout,
 	 input PCout, MDRout, 
 	 input InPortout, Cout
     
@@ -46,11 +46,11 @@ always @(*) begin
     else if (R14out)  q = BusMuxInR14;
     else if (R15out)  q = BusMuxInR15;
 
-    else if (HIout)    q = BusMuxInHI;
+    else if (HIout)    q = BusMuxInHi;
     else if (LOout)    q = BusMuxInLO;
 
-    else if (Zhighout) q = BusMuxInZhigh;
-    else if (Zlowout)  q = BusMuxInZlow;
+    else if (ZHIout) q = BusMuxInZHi;
+    else if (ZLOout)  q = BusMuxInZLO;
 
     else if (PCout)    q = BusMuxInPC;
     else if (MDRout)   q = BusMuxInMDR;

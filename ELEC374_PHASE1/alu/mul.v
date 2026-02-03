@@ -1,4 +1,5 @@
-module mul (
+// 32x32 carry save fast multiplication
+module MUL (
     input  [31:0] A,
     input  [31:0] B,
     output [31:0] HI,
@@ -19,7 +20,7 @@ module mul (
     wire        product_cout;
 
     // CSA step: sum_r + car_r + pp_r -> sum_next, car_next
-    csa64 csa (
+    CarrySaveAdder64 csa (
         .A   (sum_r),
         .B   (car_r),
         .C   (pp_r),
@@ -28,7 +29,7 @@ module mul (
     );
 
     // Final collapse: product = sum_r + (car_r << 1)
-    adder64 final_add (
+    Add64 final_add (
         .A   (sum_r),
         .B   (car_r << 1),
         .Sum (product),

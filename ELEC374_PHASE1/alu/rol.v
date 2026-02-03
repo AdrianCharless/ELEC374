@@ -1,4 +1,5 @@
-module rol (
+// rotate left
+module ROL (
     input  [31:0] in,
     input  [31:0] shift_amt_in,   // shift amount comes from a reg [Rc]
     output [31:0] out
