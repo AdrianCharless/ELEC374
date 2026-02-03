@@ -1,270 +1,173 @@
 // ============================================================================
-// Subtraction Testbench
-// Tests the sub module (A - B) with various test cases
+// SUB (Subtraction) Datapath Testbench - Phase 1
+// Following control sequence from Section 3.4 (Page 13) of CPU Phase 1 PDF
+// Tests: sub R2, R5, R6
 // ============================================================================
 
 `timescale 1ns/10ps
 
-module sub_tb;
+module sub_datapath_tb;
 
-    // Testbench signals
-    reg [31:0] A;
-    reg [31:0] B;
-    wire [31:0] Result;
+    // Control signals for datapath
+    reg R0out, R1out, R2out, R3out, R4out, R5out, R6out, R7out;
+    reg R8out, R9out, R10out, R11out, R12out, R13out, R14out, R15out;
+    reg HIout, LOout, ZHIout, ZLOout, PCout, MDRout, InPortout, Cout;
     
-    // Test counter
-    integer test_num;
-    integer errors;
-
-    // Instantiate the sub module
-    sub dut (
-        .A(A),
-        .B(B),
-        .Result(Result)
+    reg R0in, R1in, R2in, R3in, R4in, R5in, R6in, R7in;
+    reg R8in, R9in, R10in, R11in, R12in, R13in, R14in, R15in;
+    reg HIin, LOin, PCin, IRin, Yin, Zin, MARin, MDRin;
+    
+    reg ADD, SUB, AND, OR, SHR, SHRA, SHL, ROR, ROL, MUL, DIV, NEG, NOT;
+    reg IncPC, Read;
+    reg [31:0] Mdatain;
+    reg clock, clear;
+    
+    // Outputs from datapath
+    wire [31:0] IR, Outport, BusMuxOut, Zhi, Zlo;
+    
+    // State machine parameters
+    parameter Default = 4'b0000, Reg_load1a = 4'b0001, Reg_load1b = 4'b0010,
+              Reg_load2a = 4'b0011, Reg_load2b = 4'b0100, Reg_load3a = 4'b0101,
+              Reg_load3b = 4'b0110, T0 = 4'b0111, T1 = 4'b1000, T2 = 4'b1001,
+              T3 = 4'b1010, T4 = 4'b1011, T5 = 4'b1100;
+    
+    reg [3:0] Present_state = Default;
+    
+    // Instantiate the datapath
+    DATAPATH DUT (
+        .R0out(R0out), .R1out(R1out), .R2out(R2out), .R3out(R3out),
+        .R4out(R4out), .R5out(R5out), .R6out(R6out), .R7out(R7out),
+        .R8out(R8out), .R9out(R9out), .R10out(R10out), .R11out(R11out),
+        .R12out(R12out), .R13out(R13out), .R14out(R14out), .R15out(R15out),
+        .HIout(HIout), .LOout(LOout), .ZHIout(ZHIout), .ZLOout(ZLOout),
+        .PCout(PCout), .MDRout(MDRout), .InPortout(InPortout), .Cout(Cout),
+        
+        .R0in(R0in), .R1in(R1in), .R2in(R2in), .R3in(R3in),
+        .R4in(R4in), .R5in(R5in), .R6in(R6in), .R7in(R7in),
+        .R8in(R8in), .R9in(R9in), .R10in(R10in), .R11in(R11in),
+        .R12in(R12in), .R13in(R13in), .R14in(R14in), .R15in(R15in),
+        .HIin(HIin), .LOin(LOin), .PCin(PCin), .IRin(IRin),
+        .Yin(Yin), .Zin(Zin), .MARin(MARin), .MDRin(MDRin),
+        
+        .ADD(ADD), .SUB(SUB), .AND(AND), .OR(OR),
+        .SHR(SHR), .SHRA(SHRA), .SHL(SHL), .ROR(ROR), .ROL(ROL),
+        .MUL(MUL), .DIV(DIV), .NEG(NEG), .NOT(NOT),
+        
+        .IncPC(IncPC), .Read(Read), .Mdatain(Mdatain),
+        .clock(clock), .clear(clear),
+        
+        .IR(IR), .Outport(Outport), .BusMuxOut(BusMuxOut),
+        .Zhi(Zhi), .Zlo(Zlo)
     );
-
-    // Test procedure
+    
+    // Clock generation
     initial begin
-        // Initialize
-        test_num = 0;
-        errors = 0;
-        
-        $display("========================================");
-        $display("Subtraction Test Bench");
-        $display("========================================");
-        
-        // Test 1: Simple subtraction (5 - 3 = 2)
-        test_num = test_num + 1;
-        A = 32'd5;
-        B = 32'd3;
-        #10;
-        if (Result !== 32'd2) begin
-            $display("ERROR Test %0d: 5 - 3 failed", test_num);
-            $display("  A: %0d, B: %0d, Expected: 2, Got: %0d", 
-                     $signed(A), $signed(B), $signed(Result));
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 5 - 3 = 2", test_num);
-        end
-        
-        // Test 2: Subtract zero (10 - 0 = 10)
-        test_num = test_num + 1;
-        A = 32'd10;
-        B = 32'd0;
-        #10;
-        if (Result !== 32'd10) begin
-            $display("ERROR Test %0d: 10 - 0 failed", test_num);
-            $display("  A: %0d, B: %0d, Expected: 10, Got: %0d", 
-                     $signed(A), $signed(B), $signed(Result));
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 10 - 0 = 10", test_num);
-        end
-        
-        // Test 3: Subtract from zero (0 - 5 = -5)
-        test_num = test_num + 1;
-        A = 32'd0;
-        B = 32'd5;
-        #10;
-        if ($signed(Result) !== -5) begin
-            $display("ERROR Test %0d: 0 - 5 failed", test_num);
-            $display("  A: %0d, B: %0d, Expected: -5, Got: %0d", 
-                     $signed(A), $signed(B), $signed(Result));
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 0 - 5 = -5", test_num);
-        end
-        
-        // Test 4: Result is zero (7 - 7 = 0)
-        test_num = test_num + 1;
-        A = 32'd7;
-        B = 32'd7;
-        #10;
-        if (Result !== 32'd0) begin
-            $display("ERROR Test %0d: 7 - 7 failed", test_num);
-            $display("  A: %0d, B: %0d, Expected: 0, Got: %0d", 
-                     $signed(A), $signed(B), $signed(Result));
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 7 - 7 = 0", test_num);
-        end
-        
-        // Test 5: Large positive numbers (1000 - 250 = 750)
-        test_num = test_num + 1;
-        A = 32'd1000;
-        B = 32'd250;
-        #10;
-        if (Result !== 32'd750) begin
-            $display("ERROR Test %0d: 1000 - 250 failed", test_num);
-            $display("  A: %0d, B: %0d, Expected: 750, Got: %0d", 
-                     $signed(A), $signed(B), $signed(Result));
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 1000 - 250 = 750", test_num);
-        end
-        
-        // Test 6: Negative result (100 - 200 = -100)
-        test_num = test_num + 1;
-        A = 32'd100;
-        B = 32'd200;
-        #10;
-        if ($signed(Result) !== -100) begin
-            $display("ERROR Test %0d: 100 - 200 failed", test_num);
-            $display("  A: %0d, B: %0d, Expected: -100, Got: %0d", 
-                     $signed(A), $signed(B), $signed(Result));
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 100 - 200 = -100", test_num);
-        end
-        
-        // Test 7: Positive minus negative (10 - (-5) = 15)
-        test_num = test_num + 1;
-        A = 32'd10;
-        B = -32'd5;
-        #10;
-        if (Result !== 32'd15) begin
-            $display("ERROR Test %0d: 10 - (-5) failed", test_num);
-            $display("  A: %0d, B: %0d, Expected: 15, Got: %0d", 
-                     $signed(A), $signed(B), $signed(Result));
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 10 - (-5) = 15", test_num);
-        end
-        
-        // Test 8: Negative minus positive (-10 - 5 = -15)
-        test_num = test_num + 1;
-        A = -32'd10;
-        B = 32'd5;
-        #10;
-        if ($signed(Result) !== -15) begin
-            $display("ERROR Test %0d: -10 - 5 failed", test_num);
-            $display("  A: %0d, B: %0d, Expected: -15, Got: %0d", 
-                     $signed(A), $signed(B), $signed(Result));
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: -10 - 5 = -15", test_num);
-        end
-        
-        // Test 9: Negative minus negative (-10 - (-3) = -7)
-        test_num = test_num + 1;
-        A = -32'd10;
-        B = -32'd3;
-        #10;
-        if ($signed(Result) !== -7) begin
-            $display("ERROR Test %0d: -10 - (-3) failed", test_num);
-            $display("  A: %0d, B: %0d, Expected: -7, Got: %0d", 
-                     $signed(A), $signed(B), $signed(Result));
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: -10 - (-3) = -7", test_num);
-        end
-        
-        // Test 10: Maximum positive value operations
-        test_num = test_num + 1;
-        A = 32'h7FFFFFFF; // 2147483647
-        B = 32'd1;
-        #10;
-        if (Result !== 32'h7FFFFFFE) begin
-            $display("ERROR Test %0d: Max - 1 failed", test_num);
-            $display("  A: %0d (0x%h), B: %0d, Expected: 2147483646, Got: %0d (0x%h)", 
-                     $signed(A), A, $signed(B), $signed(Result), Result);
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 2147483647 - 1 = 2147483646", test_num);
-        end
-        
-        // Test 11: Hex pattern subtraction
-        test_num = test_num + 1;
-        A = 32'h12345678;
-        B = 32'h11111111;
-        #10;
-        if (Result !== 32'h01234567) begin
-            $display("ERROR Test %0d: Hex pattern subtraction failed", test_num);
-            $display("  A: 0x%h, B: 0x%h, Expected: 0x01234567, Got: 0x%h", 
-                     A, B, Result);
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 0x12345678 - 0x11111111 = 0x01234567", test_num);
-        end
-        
-        // Test 12: Large numbers
-        test_num = test_num + 1;
-        A = 32'd1000000;
-        B = 32'd500000;
-        #10;
-        if (Result !== 32'd500000) begin
-            $display("ERROR Test %0d: 1000000 - 500000 failed", test_num);
-            $display("  A: %0d, B: %0d, Expected: 500000, Got: %0d", 
-                     $signed(A), $signed(B), $signed(Result));
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 1000000 - 500000 = 500000", test_num);
-        end
-        
-        // Test 13: Overflow case (positive - negative = large positive)
-        test_num = test_num + 1;
-        A = 32'h7FFFFFFF; // Max positive
-        B = -32'd1;       // -1
-        #10;
-        // This will overflow in signed arithmetic, but the hardware result is defined
-        $display("INFO Test %0d: Overflow case - 0x7FFFFFFF - (-1)", test_num);
-        $display("  A: %0d (0x%h), B: %0d (0x%h), Got: %0d (0x%h)", 
-                 $signed(A), A, $signed(B), B, $signed(Result), Result);
-        $display("  Note: This causes signed overflow (wraps to negative)");
-        test_num = test_num + 1;
-        
-        // Test 14: All ones minus all ones
-        test_num = test_num + 1;
-        A = 32'hFFFFFFFF;
-        B = 32'hFFFFFFFF;
-        #10;
-        if (Result !== 32'd0) begin
-            $display("ERROR Test %0d: 0xFFFFFFFF - 0xFFFFFFFF failed", test_num);
-            $display("  A: 0x%h, B: 0x%h, Expected: 0, Got: 0x%h", 
-                     A, B, Result);
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 0xFFFFFFFF - 0xFFFFFFFF = 0", test_num);
-        end
-        
-        // Test 15: Pattern test
-        test_num = test_num + 1;
-        A = 32'hDEADBEEF;
-        B = 32'hBEEFDEAD;
-        #10;
-        if (Result !== 32'h1FBDE042) begin
-            $display("ERROR Test %0d: Pattern subtraction failed", test_num);
-            $display("  A: 0x%h, B: 0x%h, Expected: 0x1FBDE042, Got: 0x%h", 
-                     A, B, Result);
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 0xDEADBEEF - 0xBEEFDEAD = 0x1FBDE042", test_num);
-        end
-        
-        // Test 16: Simple test (52 - 18 = 34)
-        test_num = test_num + 1;
-        A = 32'd52;
-        B = 32'd18;
-        #10;
-        if (Result !== 32'd34) begin
-            $display("ERROR Test %0d: 52 - 18 failed", test_num);
-            $display("  A: %0d, B: %0d, Expected: 34, Got: %0d", 
-                     $signed(A), $signed(B), $signed(Result));
-            errors = errors + 1;
-        end else begin
-            $display("PASS Test %0d: 52 - 18 = 34", test_num);
-        end
-        
-        // Print summary
-        $display("========================================");
-        if (errors == 0) begin
-            $display("ALL TESTS PASSED! (%0d/%0d)", test_num, test_num);
-        end else begin
-            $display("TESTS COMPLETED: %0d PASSED, %0d FAILED", test_num - errors, errors);
-        end
-        $display("========================================");
-        
-        $finish;
+        clock = 0;
+        forever #10 clock = ~clock;
+    end
+    
+    // State machine
+    always @(posedge clock) begin
+        case (Present_state)
+            Default    : Present_state = Reg_load1a;
+            Reg_load1a : Present_state = Reg_load1b;
+            Reg_load1b : Present_state = Reg_load2a;
+            Reg_load2a : Present_state = Reg_load2b;
+            Reg_load2b : Present_state = Reg_load3a;
+            Reg_load3a : Present_state = Reg_load3b;
+            Reg_load3b : Present_state = T0;
+            T0         : Present_state = T1;
+            T1         : Present_state = T2;
+            T2         : Present_state = T3;
+            T3         : Present_state = T4;
+            T4         : Present_state = T5;
+        endcase
+    end
+    
+    // State actions
+    always @(Present_state) begin
+        case (Present_state)
+            Default: begin
+                // Initialize all signals
+                R0out = 0; R1out = 0; R2out = 0; R3out = 0; R4out = 0; R5out = 0; R6out = 0; R7out = 0;
+                R8out = 0; R9out = 0; R10out = 0; R11out = 0; R12out = 0; R13out = 0; R14out = 0; R15out = 0;
+                HIout = 0; LOout = 0; ZHIout = 0; ZLOout = 0; PCout = 0; MDRout = 0; InPortout = 0; Cout = 0;
+                
+                R0in = 0; R1in = 0; R2in = 0; R3in = 0; R4in = 0; R5in = 0; R6in = 0; R7in = 0;
+                R8in = 0; R9in = 0; R10in = 0; R11in = 0; R12in = 0; R13in = 0; R14in = 0; R15in = 0;
+                HIin = 0; LOin = 0; PCin = 0; IRin = 0; Yin = 0; Zin = 0; MARin = 0; MDRin = 0;
+                
+                ADD = 0; SUB = 0; AND = 0; OR = 0; SHR = 0; SHRA = 0; SHL = 0; ROR = 0; ROL = 0;
+                MUL = 0; DIV = 0; NEG = 0; NOT = 0;
+                
+                IncPC = 0; Read = 0; Mdatain = 32'h00000000;
+                clear = 1;
+                #10 clear = 0;
+            end
+            
+            Reg_load1a: begin
+                Mdatain <= 32'h00000034;  // Load 52 into R5
+                Read = 0; MDRin = 0;
+                Read <= 1; MDRin <= 1;
+                #15 Read <= 0; MDRin <= 0;
+            end
+            
+            Reg_load1b: begin
+                MDRout <= 1; R5in <= 1;
+                #15 MDRout <= 0; R5in <= 0;  // R5 = 0x00000034 (52 decimal)
+            end
+            
+            Reg_load2a: begin
+                Mdatain <= 32'h00000012;  // Load 18 into R6
+                Read <= 1; MDRin <= 1;
+                #15 Read <= 0; MDRin <= 0;
+            end
+            
+            Reg_load2b: begin
+                MDRout <= 1; R6in <= 1;
+                #15 MDRout <= 0; R6in <= 0;  // R6 = 0x00000012 (18 decimal)
+            end
+            
+            Reg_load3a: begin
+                Mdatain <= 32'h00000067;  // Load arbitrary value into R2 (will be overwritten)
+                Read <= 1; MDRin <= 1;
+                #15 Read <= 0; MDRin <= 0;
+            end
+            
+            Reg_load3b: begin
+                MDRout <= 1; R2in <= 1;
+                #15 MDRout <= 0; R2in <= 0;  // R2 = 0x00000067 (initial)
+            end
+            
+            // Control Sequence for: sub R2, R5, R6
+            T0: begin
+                PCout <= 1; MARin <= 1; IncPC <= 1; Zin <= 1;
+            end
+            
+            T1: begin
+                ZLOout <= 1; PCin <= 1; Read <= 1; MDRin <= 1;
+                Mdatain <= 32'h0AAC0000;  // Opcode for "sub R2, R5, R6"
+                                          // 0000 1010 1010 1100 0000 ...
+                                          // SUB=00001, Ra=0010, Rb=0101, Rc=0110
+            end
+            
+            T2: begin
+                MDRout <= 1; IRin <= 1;
+            end
+            
+            T3: begin
+                R5out <= 1; Yin <= 1;
+            end
+            
+            T4: begin
+                R6out <= 1; SUB <= 1; Zin <= 1;
+            end
+            
+            T5: begin
+                ZLOout <= 1; R2in <= 1;
+                // Result: R2 should contain R5 - R6 = 52 - 18 = 34 = 0x00000022
+            end
+        endcase
     end
 
 endmodule
