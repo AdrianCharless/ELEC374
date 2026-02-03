@@ -6,7 +6,7 @@
 
 `timescale 1ns/10ps
 
-module neg_datapath_tb;
+module neg_tb;
 
     // Control signals for datapath
     reg R0out, R1out, R2out, R3out, R4out, R5out, R6out, R7out;
