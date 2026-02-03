@@ -1,5 +1,7 @@
 // SHRA
 `timescale 1ns/10ps
+// MEANS WE ARE DEFINING THE DATAPATH, NOT INSTANTIATING DATAPATH.V
+// SO THAT WE CAN PASTE DIRECTLY INTO THE DATAPATH_TB.V FILE
 module datapath_tb; 
  reg PCout, ZLOout, MDRout, R0out, R4out; // add any other signals to see in your simulation
  reg MARin, Zin, PCin, MDRin, IRin, Yin; 
@@ -10,7 +12,8 @@ module datapath_tb;
  Reg_load2b = 4’b0100, Reg_load3a = 4’b0101, Reg_load3b = 4’b0110, T0 = 4’b0111, 
  T1 = 4’b1000, T2 = 4’b1001, T3 = 4’b1010, T4 = 4’b1011, T5 = 4’b1100;
  reg [3:0] Present_state = Default;
-Datapath DUT(PCout, Zlowout, MDRout, R0out, R4out, MARin, Zin, PCin, MDRin, IRin, Yin, IncPC, Read, SHRA, R7in, 
+// DATAPATH IS INSTANTIATED HERE
+DATAPATH DUT(PCout, Zlowout, MDRout, R0out, R4out, MARin, Zin, PCin, MDRin, IRin, Yin, IncPC, Read, SHRA, R7in, 
 R0in, R4in, Clock, Mdatain);
 // add test logic here
 initial 
@@ -116,7 +119,7 @@ module datapath_tb;
  Reg_load2b = 4’b0100, Reg_load3a = 4’b0101, Reg_load3b = 4’b0110, T0 = 4’b0111, 
  T1 = 4’b1000, T2 = 4’b1001, T3 = 4’b1010, T4 = 4’b1011, T5 = 4’b1100;
  reg [3:0] Present_state = Default;
-Datapath DUT(PCout, Zlowout, MDRout, R0out, R4out, MARin, Zin, PCin, MDRin, IRin, Yin, IncPC, Read, ROL, R7in, 
+DATAPATH DUT(PCout, Zlowout, MDRout, R0out, R4out, MARin, Zin, PCin, MDRin, IRin, Yin, IncPC, Read, ROL, R7in, 
 R0in, R4in, Clock, Mdatain);
 // add test logic here
 initial 
@@ -222,7 +225,7 @@ module datapath_tb;
  Reg_load2b = 4’b0100, Reg_load3a = 4’b0101, Reg_load3b = 4’b0110, T0 = 4’b0111, 
  T1 = 4’b1000, T2 = 4’b1001, T3 = 4’b1010, T4 = 4’b1011, T5 = 4’b1100, T6 = 4’b1101;
  reg [3:0] Present_state = Default;
-Datapath DUT(PCout, Zlowout, MDRout, R0out, R4out, MARin, Zin, PCin, MDRin, IRin, Yin, IncPC, Read, MUL, R7in, 
+DATAPATH DUT(PCout, Zlowout, MDRout, R0out, R4out, MARin, Zin, PCin, MDRin, IRin, Yin, IncPC, Read, MUL, R7in, 
 R0in, R4in, Clock, Mdatain);
 // add test logic here
 initial 
@@ -307,6 +310,9 @@ R4out <= 1; MUL <= 1; Zin <= 1;
 end
 T5: begin
 ZLOout <= 1; R7in <= 1; 
+end
+T6: begin
+ZHIout <= 1; HIin <= 1;
 end
  endcase
  end
