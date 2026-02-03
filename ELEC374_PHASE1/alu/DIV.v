@@ -1,5 +1,5 @@
 
-module div_combinational (
+module DIV (
     input  [31:0] A,              // Dividend
     input  [31:0] B,              // Divisor
     output [31:0] quotient,       // Result: A / B

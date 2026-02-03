@@ -1,4 +1,4 @@
-module csa64 (
+module CarrySaveAdder64 (
     input  [63:0] A,
     input  [63:0] B,
     input  [63:0] C,

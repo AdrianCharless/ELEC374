@@ -2,7 +2,7 @@
 // Negate Module - Two's Complement Negation
 // Implements: Result = -A = ~A + 1
 // ============================================================================
-module negate(
+module NEG(
     input [31:0] A,           
     output [31:0] Result      
 );

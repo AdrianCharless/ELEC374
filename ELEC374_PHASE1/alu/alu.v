@@ -4,12 +4,12 @@
 // Supports: add, sub, mul, div, and, or, shr, shra, shl, ror, rol, neg, not
 // ============================================================================
 
-module alu(
+module ALU(
     input [4:0]         opcode,     // 5-bit opcode from IR[31:27]
     input [31:0]        A,          // First operand (from Y register)
     input [31:0]        B,          // Second operand (from bus)
-    output [31:0]       ZLo,        // Lower 32 bits of result
-    output [31:0]       ZHi         // Upper 32 bits (used for mul/div)
+    output [31:0]       ZLO,        // Lower 32 bits of result
+    output [31:0]       ZHI         // Upper 32 bits (used for mul/div)
 );
 
     // ========================================================================
@@ -52,7 +52,7 @@ module alu(
     // ========================================================================
     
     // Addition
-    Adder32 adder_inst (
+    ADD32 adder_inst (
         .A(A),
         .B(B),
         .Sum(add_result),
@@ -60,35 +60,35 @@ module alu(
     );
 
     // Subtraction
-    sub sub_inst (
+    SUB sub_inst (
         .A(A),
         .B(B),
         .Result(sub_result)
     );
 
     // Logical AND
-    AND_ALU and_inst (
+    AND and_inst (
         .A(A),
         .B(B),
         .out(and_result)
     );
 
     // Logical OR
-    OR_ALU or_inst (
+    OR or_inst (
         .A(A),
         .B(B),
         .out(or_result)
     );
 
     // Shift Right Logical
-    shiftRight shr_inst (
+    SHR shr_inst (
         .A(A),
         .B(B[4:0]),
         .result(shr_result)
     );
 
     // Shift Right Arithmetic
-    shiftRightArithmetic shra_inst (
+    SHRA shra_inst (
         .A(A),
         .B(B[4:0]),
         .result(shra_result)
@@ -102,21 +102,21 @@ module alu(
     );
 
     // Rotate Right
-    rotate_right ror_inst (
+    ROR ror_inst (
         .A(A),
         .count(B),
         .Result(ror_result)
     );
 
     // Rotate Left
-    rol rol_inst (
+    ROL rol_inst (
         .A(A),
         .count(B),
         .Result(rol_result)
     );
 
     // Multiplication (produces 64-bit result)
-    mul mul_inst (
+    MUL mul_inst (
         .A(A),
         .B(B),
         .HI(mul_hi),
@@ -124,7 +124,7 @@ module alu(
     );
 
     // Division (combinational - produces quotient and remainder)
-    div_combinational div_inst (
+    DIV div_inst (
         .A(A),
         .B(B),
         .quotient(div_quotient),
@@ -132,13 +132,13 @@ module alu(
     );
 
     // Negate (2's complement)
-    negate neg_inst (
+    NEG neg_inst (
         .A(B),
         .Result(neg_result)
     );
 
     // NOT (1's complement)
-    not_operation not_inst (
+    NOT not_inst (
         .A(B),
         .Result(not_result)
     );
@@ -228,8 +228,8 @@ module alu(
     end
 
     // Assign outputs
-    assign ZLo = result_lo;
-    assign ZHi = result_hi;
+    assign ZLO = result_lo;
+    assign ZHI = result_hi;
 
 endmodule
 

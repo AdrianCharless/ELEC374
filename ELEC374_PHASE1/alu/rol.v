@@ -1,4 +1,4 @@
-module rol (
+module ROL (
     input  [31:0] A,              // Value to rotate (was "in")
     input  [31:0] count,          // Shift amount (was "shift_amt_in")
     output [31:0] Result          // Output (was "out")
