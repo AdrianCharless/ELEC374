@@ -16,7 +16,7 @@ module BUS (
 	 input R8out, R9out, R10out, R11out, R12out, R13out, R14out, R15out,
 	 input HIout, LOout, ZHIout, ZLOout,
 	 input PCout, MDRout, 
-	 input InPortout, Cout
+	 input InPortout, Cout,
     
 	output wire [31:0]BusMuxOut //wire vs register?? WIRE
 );

@@ -4,7 +4,7 @@
  {
  "label": "Run Verilog Simulation",
  "type": "shell",
- "command": "iverilog -o simulation_bin.out datapath.v register.v bus.v adder.v datapath_tb.v && vvp simulation_bin.out && gtkwave waveforms.vcd",
+ "command": "iverilog -o simulation_bin.out datapath.v registers/register.v registers/PC.v registers/ZReg.v memory/MDR.v memory/MDMux.v bus/bus.v ALU_GIA/alu.v tb && vvp simulation_bin.out && gtkwave waveforms.vcd",
  "options": {
  "cwd": "${workspaceFolder}/ELEC374_PHASE1"
  },

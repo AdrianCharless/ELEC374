@@ -40,8 +40,8 @@ module DATAPATH (
 
     // not used in phase 1
     output [31:0] IR,
-    output [31:0] MDRout,
-    output [31:0] Outport
+    //output [31:0] MDRoutput,
+    output [31:0] Outport,
 
     // for phase 1 debugging (can remove later)
     output [31:0] BusMuxOut,
@@ -91,10 +91,10 @@ module DATAPATH (
     // MAR (loads address from bus)
     Register MAR (clear, clock, MARin, BusMuxOut, BusMuxInMAR);
     // PC with internal incrementer (no ALU needed for IncPC)
-    PC PCreg (clear, clock, PCin, IncPC, BusMuxOutm BusMuxInPC);
+    PC PCreg (clear, clock, PCin, IncPC, BusMuxOut, BusMuxInPC);
 
     
-    wire [31:0] BusMuxInMDR;  // internal wire name used in datapath
+    // internal wire name used in datapath
     // MDR mux selects Mdatain when Read=1, else bus
     // MDR has two input sources (memory or bus).
     MDR mdr (clear, clock,MDRin, Read, BusMuxOut, Mdatain, BusMuxInMDR);

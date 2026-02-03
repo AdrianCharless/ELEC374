@@ -1,5 +1,5 @@
 `timescale 1ns/10ps
-module datapath_tb;
+module and_tb;
     reg PCout, Zlowout, MDRout, R5out, R6out; // add any other signals to see in your simulation
     reg MARin, Zin, PCin, MDRin, IRin, Yin;
     reg IncPC, Read, AND, R2in, R5in, R6in;
@@ -11,8 +11,10 @@ module datapath_tb;
                 T1 = 4'b1000, T2 = 4'b1001, T3 = 4'b1010, T4 = 4'b1011, T5 = 4'b1100;
     reg [3:0] Present_state = Default;
 
-Datapath DUT(PCout, Zlowout, MDRout, R5out, R6out, MARin, Zin, PCin, MDRin, IRin, Yin, IncPC, Read, AND, R2in,
-R5in, R6in, Clock, Mdatain);
+Datapath DUT(PCout, Zlowout, MDRout, R5out, R6out,
+            MARin, Zin, PCin, MDRin, IRin, Yin,
+            IncPC, Read, AND, R2in, R5in, R6in,
+            Clock, Mdatain);
 
 // add test logic here
 initial
@@ -45,7 +47,7 @@ always @(Present_state) // do the required job in each state
         case (Present_state) // assert the required signals in each clock cycle
             Default: begin
                 PCout <= 0; Zlowout <= 0; MDRout <= 0; // initialize the signals
-                R3out <= 0; R7out <= 0; MARin <= 0; Zin <= 0;
+                R5out <= 0; R6out <= 0; MARin <= 0; Zin <= 0;
                 PCin <=0; MDRin <= 0; IRin <= 0; Yin <= 0;
                 IncPC <= 0; Read <= 0; AND <= 0;
                 R2in <= 0; R5in <= 0; R6in <= 0; Mdatain <= 32'h00000000;
@@ -103,7 +105,7 @@ always @(Present_state) // do the required job in each state
 endmodule
 
 initial begin
-    $dumpfile("datapath_tb.vcd");
+    $dumpfile("and_tb.vcd");
     $dumpvars;
 end
 
