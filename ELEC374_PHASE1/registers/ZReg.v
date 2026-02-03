@@ -13,7 +13,7 @@ always @(posedge clock) begin
 	if (clear) begin
 		q <= 64'h0;
 	end else if (Zenable) begin
-		q <= Zin;
+		q <= Zinput;
 	end
 end
 

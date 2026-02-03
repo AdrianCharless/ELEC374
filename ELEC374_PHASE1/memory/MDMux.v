@@ -1,15 +1,11 @@
 module MDMux (
-	input [31:0]	BusMuxOut,
-	input [31:0]	MDatain,
-	input 			Read,
-	output [31:0]	D
+	input wire [31:0]	BusMuxOut,
+	input wire [31:0]	MDatain,
+	input wire 			Read,
+	output wire [31:0]	D
 );
 
-always @ (*) begin
-	if (Read) D = MDatain;
-	else D = BusMuxOut;
-end
-
+assign D = Read ? MDatain : BusMuxOut;
 // can also write: assign D = Read ? Mdatain : BusMuxOut;
 
 // use "assign" when output is single logic expression

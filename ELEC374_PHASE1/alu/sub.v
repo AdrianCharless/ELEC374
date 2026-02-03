@@ -13,7 +13,7 @@ reg [31:0] result;
 reg [32:0] Carry;             
 integer i;                    
 
-negate neg_module(
+NEG neg_module(
     .A(B),                    // Input: B
     .Result(B_complement)            // Output: -B
 	 

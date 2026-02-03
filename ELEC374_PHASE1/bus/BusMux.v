@@ -68,4 +68,4 @@ always @(*) begin
 	// could also use if/else if/else statement but either or works
 end
 
-end module
+endmodule

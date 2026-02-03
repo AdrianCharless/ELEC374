@@ -46,10 +46,10 @@ always @(*) begin
     else if (R14out)  q = BusMuxInR14;
     else if (R15out)  q = BusMuxInR15;
 
-    else if (HIout)    q = BusMuxInHi;
+    else if (HIout)    q = BusMuxInHI;
     else if (LOout)    q = BusMuxInLO;
 
-    else if (ZHIout) q = BusMuxInZHi;
+    else if (ZHIout) q = BusMuxInZHI;
     else if (ZLOout)  q = BusMuxInZLO;
 
     else if (PCout)    q = BusMuxInPC;
