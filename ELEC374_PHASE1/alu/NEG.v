@@ -2,7 +2,7 @@
 // Negate Module - Two's Complement Negation
 // Implements: Result = -A = ~A + 1
 // ============================================================================
-module NEG(
+module negate(
     input [31:0] A,           
     output [31:0] Result      
 );
@@ -20,7 +20,7 @@ always @(*) begin
     for (i = 0; i < 32; i = i + 1) begin
         result[i] = A_complement[i] ^ Carry[i];
         Carry[i+1] = A_complement[i] & Carry[i];
-    endc 
+    end 
 end
 
 assign Result = result;

@@ -2,7 +2,7 @@
 // Subtraction Module: A - B = A + (-B)
 // ============================================================================
 
-module SUB(
+module sub(
     input [31:0] A, // number we are subtracting from
 	 input [31:0] B, //number we subtract
     output [31:0] Result      

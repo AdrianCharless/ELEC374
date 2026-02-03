@@ -1,5 +1,4 @@
-// 32 bit ripple carry adder
-module ADD32 (
+module Adder32 (
     input  [31:0] A,
     input  [31:0] B,
     output [31:0] Sum,

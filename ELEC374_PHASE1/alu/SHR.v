@@ -1,4 +1,3 @@
-// logical shift right
 module shiftRight(
     input wire [31:0] A,
     // Only 5 bits because anything more would 31 would be the same as 31

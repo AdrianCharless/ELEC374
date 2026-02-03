@@ -1,62 +1,51 @@
-// DIV32.v
-// Unsigned 32-bit restoring division (combinational - no clock)
-// quotient = dividend / divisor
-// remainder = dividend % divisor
-//
-// Fully combinational: result available after propagation delay
 
-module DIV (
-	input  wire [31:0] dividend,
-	input  wire [31:0] divisor,
-
-	output reg  [31:0] quotient,
-	output reg  [31:0] remainder
+module div_combinational (
+    input  [31:0] A,              // Dividend
+    input  [31:0] B,              // Divisor
+    output [31:0] quotient,       // Result: A / B
+    output [31:0] remainder       // Result: A % B
 );
 
-	reg [32:0] A;        // 33-bit remainder (sign check via MSB)
-	reg [31:0] Q;        // dividend/quotient
-	reg [32:0] M;        // 33-bit divisor
-	reg [32:0] A_shift;
-	reg [31:0] Q_shift;
-	reg [32:0] A_sub;
+    // Internal registers for the algorithm
+    reg [31:0] Q;                 // Quotient
+    reg [31:0] R;                 // Remainder
+    reg [31:0] divisor;
+    integer i;
 
-	integer i;
+    always @(*) begin
+        // Handle division by zero
+        if (B == 32'd0) begin
+            Q = 32'hFFFFFFFF;     // Set to max value for divide by zero
+            R = 32'h00000000;
+        end
+        else begin
+            // Initialize
+            Q = 32'd0;
+            R = 32'd0;
+            divisor = B;
 
-	always @(*) begin
-		if (divisor == 32'd0) begin
-			// divide-by-zero: quotient=0, remainder=dividend
-			quotient  = 32'd0;
-			remainder = dividend;
-		end else begin
-			A = 33'd0;
-			Q = dividend;
-			M = {1'b0, divisor};
+            // Restoring division algorithm (unrolled loop)
+            // Process from MSB to LSB
+            for (i = 31; i >= 0; i = i - 1) begin
+                // Shift remainder left by 1 bit
+                R = R << 1;
+                
+                // Move next bit of dividend into remainder LSB
+                R[0] = A[i];
+                
+                // Try subtraction
+                if (R >= divisor) begin
+                    R = R - divisor;
+                    Q[i] = 1'b1;
+                end
+                else begin
+                    Q[i] = 1'b0;
+                end
+            end
+        end
+    end
 
-			for (i = 0; i < 32; i = i + 1) begin
-				// 1) shift left (A,Q)
-				A_shift = {A[31:0], Q[31]};
-				Q_shift = {Q[30:0], 1'b0};
-
-				// 2) subtract divisor
-				A_sub = A_shift - M;
-
-				// 3) restore if negative; set Q0
-				if (A_sub[32]) begin
-					A = A_shift;
-					Q = {Q_shift[31:1], 1'b0};
-				end else begin
-					A = A_sub;
-					Q = {Q_shift[31:1], 1'b1};
-				end
-			end
-
-			quotient  = Q;
-			remainder = A[31:0];
-		end
-	end
+    assign quotient = Q;
+    assign remainder = R;
 
 endmodule
-</think>
-Fixing the module: outputs driven by `always @(*)` must be `reg`:
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-StrReplace

@@ -1,4 +1,3 @@
-// 32x32 carry save fast multiplication
 module MUL (
     input  [31:0] A,
     input  [31:0] B,

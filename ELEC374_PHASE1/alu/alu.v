@@ -1,11 +1,15 @@
-// ALU Module 
+// ============================================================================
+// Integrated ALU Module for Mini SRC Phase 1
+// FULLY COMBINATIONAL - All operations complete immediately
+// Supports: add, sub, mul, div, and, or, shr, shra, shl, ror, rol, neg, not
+// ============================================================================
 
-module ALU(
+module alu(
     input [4:0]         opcode,     // 5-bit opcode from IR[31:27]
     input [31:0]        A,          // First operand (from Y register)
     input [31:0]        B,          // Second operand (from bus)
-    output [31:0]       ZLO,        // Lower 32 bits of result
-    output [31:0]       ZHI         // Upper 32 bits (used for mul/div)
+    output [31:0]       ZLo,        // Lower 32 bits of result
+    output [31:0]       ZHi         // Upper 32 bits (used for mul/div)
 );
 
     // ========================================================================
@@ -29,7 +33,7 @@ module ALU(
     // Wires for each operation's output
     // ========================================================================
     wire [31:0] add_result;
-    wire [31:0] add_cout;
+    wire [4:0] add_cout;
     wire [31:0] sub_result;
     wire [31:0] and_result;
     wire [31:0] or_result;
@@ -48,7 +52,7 @@ module ALU(
     // ========================================================================
     
     // Addition
-    ADD32 adder_inst (
+    Adder32 adder_inst (
         .A(A),
         .B(B),
         .Sum(add_result),
@@ -56,35 +60,35 @@ module ALU(
     );
 
     // Subtraction
-    SUB sub_inst (
+    sub sub_inst (
         .A(A),
         .B(B),
         .Result(sub_result)
     );
 
     // Logical AND
-    AND and_inst (
+    AND_ALU and_inst (
         .A(A),
         .B(B),
         .out(and_result)
     );
 
     // Logical OR
-    OR or_inst (
+    OR_ALU or_inst (
         .A(A),
         .B(B),
         .out(or_result)
     );
 
     // Shift Right Logical
-    SHR shr_inst (
+    shiftRight shr_inst (
         .A(A),
         .B(B[4:0]),
         .result(shr_result)
     );
 
     // Shift Right Arithmetic
-    SHRA shra_inst (
+    shiftRightArithmetic shra_inst (
         .A(A),
         .B(B[4:0]),
         .result(shra_result)
@@ -98,21 +102,21 @@ module ALU(
     );
 
     // Rotate Right
-    ROR ror_inst (
+    rotate_right ror_inst (
         .A(A),
         .count(B),
         .Result(ror_result)
     );
 
     // Rotate Left
-    ROL rol_inst (
+    rol rol_inst (
         .A(A),
         .count(B),
         .Result(rol_result)
     );
 
     // Multiplication (produces 64-bit result)
-    MUL mul_inst (
+    mul mul_inst (
         .A(A),
         .B(B),
         .HI(mul_hi),
@@ -120,21 +124,21 @@ module ALU(
     );
 
     // Division (combinational - produces quotient and remainder)
-    DIV div_inst (
-        .A(A),              // Dividend
-        .B(B),              // Divisor
-        .quotient(quotient),
-        .remainder(remainder)
+    div_combinational div_inst (
+        .A(A),
+        .B(B),
+        .quotient(div_quotient),
+        .remainder(div_remainder)
     );
 
     // Negate (2's complement)
-    NEG neg_inst (
+    negate neg_inst (
         .A(B),
         .Result(neg_result)
     );
 
     // NOT (1's complement)
-    NOT not_inst (
+    not_operation not_inst (
         .A(B),
         .Result(not_result)
     );
@@ -224,7 +228,9 @@ module ALU(
     end
 
     // Assign outputs
-    assign ZLO = result_lo;
-    assign ZHI = result_hi;
+    assign ZLo = result_lo;
+    assign ZHi = result_hi;
 
 endmodule
+
+

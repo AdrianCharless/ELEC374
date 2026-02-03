@@ -1,5 +1,4 @@
-// 64 bit ripple carry adder
-module Add64 (
+module adder64 (
     input  [63:0] A,
     input  [63:0] B,
     output [63:0] Sum,
