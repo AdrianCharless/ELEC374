@@ -1,9 +1,11 @@
-// OR
 `timescale 1ns/10ps
-module datapath_tb;
 
-  // add any other signals to see in your simulation
-  reg PCout, ZLOout, MDRout, R5out, R6out;
+// ============================================================
+// datapath_tb_or  : OR  R2, R5, R6   (opcode = 32'h192B0000)
+// ============================================================
+module datapath_tb_or;
+
+  reg PCout, Zlowout, MDRout, R5out, R6out;
   reg MARin, Zin, PCin, MDRin, IRin, Yin;
   reg IncPC, Read, OR, R2in, R5in, R6in;
 
@@ -11,125 +13,413 @@ module datapath_tb;
   reg [31:0] Mdatain;
 
   parameter Default    = 4'b0000,
-            Reg_load1a = 4'b0001, Reg_load1b = 4'b0010,
-            Reg_load2a = 4'b0011, Reg_load2b = 4'b0100,
-            Reg_load3a = 4'b0101, Reg_load3b = 4'b0110,
-            T0         = 4'b0111, T1         = 4'b1000,
-            T2         = 4'b1001, T3         = 4'b1010,
-            T4         = 4'b1011, T5         = 4'b1100;
+            Reg_load1a = 4'b0001, Reg_load1b = 4'b0010,   // load R5
+            Reg_load2a = 4'b0011, Reg_load2b = 4'b0100,   // load R6
+            Reg_load3a = 4'b0101, Reg_load3b = 4'b0110,   // optional load R2
+            T0         = 4'b0111,
+            T1         = 4'b1000,
+            T2         = 4'b1001,
+            T3         = 4'b1010,
+            T4         = 4'b1011,
+            T5         = 4'b1100;
 
-  reg [3:0] Present_state = Default;
+  reg [3:0] Present_state;
 
-  // IMPORTANT:
-  // This matches the SAME Datapath port-order style as your example.
-  // If your actual Datapath module header differs, you'll need to reorder or use named ports.
-  Datapath DUT(
-    PCout, ZLOout, MDRout, R5out, R6out,
+  // DUT (positional mapping; must match YOUR DATAPATH module port order)
+  DATAPATH DUT(
+    PCout, Zlowout, MDRout, R5out, R6out,
     MARin, Zin, PCin, MDRin, IRin, Yin,
     IncPC, Read, OR, R2in, R5in, R6in,
     Clock, Mdatain
   );
 
-  // clock
+  // Clock
   initial begin
-    Clock = 0;
+    Clock = 1'b0;
     forever #10 Clock = ~Clock;
   end
 
-  // finite state machine
+  initial begin
+    Present_state = Default;
+  end
+
+  // State advance
   always @(posedge Clock) begin
     case (Present_state)
-      Default    : Present_state = Reg_load1a;
-      Reg_load1a : Present_state = Reg_load1b;
-      Reg_load1b : Present_state = Reg_load2a;
-      Reg_load2a : Present_state = Reg_load2b;
-      Reg_load2b : Present_state = Reg_load3a;
-      Reg_load3a : Present_state = Reg_load3b;
-      Reg_load3b : Present_state = T0;
-      T0         : Present_state = T1;
-      T1         : Present_state = T2;
-      T2         : Present_state = T3;
-      T3         : Present_state = T4;
-      T4         : Present_state = T5;
+      Default:    Present_state <= Reg_load1a;
+      Reg_load1a: Present_state <= Reg_load1b;
+      Reg_load1b: Present_state <= Reg_load2a;
+      Reg_load2a: Present_state <= Reg_load2b;
+      Reg_load2b: Present_state <= Reg_load3a;
+      Reg_load3a: Present_state <= Reg_load3b;
+      Reg_load3b: Present_state <= T0;
+      T0:         Present_state <= T1;
+      T1:         Present_state <= T2;
+      T2:         Present_state <= T3;
+      T3:         Present_state <= T4;
+      T4:         Present_state <= T5;
+      T5:         Present_state <= T5; // hold
+      default:    Present_state <= Default;
     endcase
   end
 
-  // do the required job in each state
-  always @(Present_state) begin
+  // Control outputs
+  always @(*) begin
+    // deassert everything every state (prevents sticky signals)
+    PCout=0; Zlowout=0; MDRout=0; R5out=0; R6out=0;
+    MARin=0; Zin=0; PCin=0; MDRin=0; IRin=0; Yin=0;
+    IncPC=0; Read=0; OR=0; R2in=0; R5in=0; R6in=0;
+    Mdatain = 32'h00000000;
+
     case (Present_state)
 
-      // initialize signals
-      Default: begin
-        PCout <= 0; ZLOout <= 0; MDRout <= 0;
-        R5out <= 0; R6out  <= 0; MARin  <= 0; Zin <= 0;
-        PCin  <= 0; MDRin  <= 0; IRin   <= 0; Yin <= 0;
-        IncPC <= 0; Read   <= 0; OR     <= 0;
-        R2in  <= 0; R5in   <= 0; R6in   <= 0;
-        Mdatain <= 32'h00000000;
-      end
-
-      // -------- preload R5 = 0x34 --------
+      // Preload R5 = 0x34
       Reg_load1a: begin
-        Mdatain <= 32'h00000034;
-        Read <= 1; MDRin <= 1;
-        #15 Read <= 0; MDRin <= 0;
+        Mdatain = 32'h00000034;
+        Read    = 1;
+        MDRin   = 1;
       end
-
       Reg_load1b: begin
-        MDRout <= 1; R5in <= 1;
-        #15 MDRout <= 0; R5in <= 0;
+        MDRout = 1;
+        R5in   = 1;
       end
 
-      // -------- preload R6 = 0x45 --------
+      // Preload R6 = 0x45
       Reg_load2a: begin
-        Mdatain <= 32'h00000045;
-        Read <= 1; MDRin <= 1;
-        #15 Read <= 0; MDRin <= 0;
+        Mdatain = 32'h00000045;
+        Read    = 1;
+        MDRin   = 1;
       end
-
       Reg_load2b: begin
-        MDRout <= 1; R6in <= 1;
-        #15 MDRout <= 0; R6in <= 0;
+        MDRout = 1;
+        R6in   = 1;
       end
 
-      // -------- optional preload R2 = 0x67 --------
+      // Optional: preload R2 = 0x67
       Reg_load3a: begin
-        Mdatain <= 32'h00000067;
-        Read <= 1; MDRin <= 1;
-        #15 Read <= 0; MDRin <= 0;
+        Mdatain = 32'h00000067;
+        Read    = 1;
+        MDRin   = 1;
       end
-
       Reg_load3b: begin
-        MDRout <= 1; R2in <= 1;
-        #15 MDRout <= 0; R2in <= 0;
+        MDRout = 1;
+        R2in   = 1;
       end
 
-      // -------- FETCH --------
+      // Fetch
       T0: begin
-        PCout <= 1; MARin <= 1; IncPC <= 1; Zin <= 1;
+        PCout = 1; MARin = 1; IncPC = 1; Zin = 1;
       end
-
       T1: begin
-        ZLOout <= 1; PCin <= 1; Read <= 1; MDRin <= 1;
-        Mdatain <= 32'h192B0000; // opcode for "or R2, R5, R6"
+        Zlowout = 1; PCin = 1; Read = 1; MDRin = 1;
+        Mdatain = 32'h192B0000; // or R2, R5, R6
       end
-
       T2: begin
-        MDRout <= 1; IRin <= 1;
+        MDRout = 1; IRin = 1;
       end
 
-      // -------- EXECUTE OR --------
+      // Execute OR
       T3: begin
-        R5out <= 1; Yin <= 1;
+        R5out = 1; Yin = 1;
       end
-
       T4: begin
-        R6out <= 1; OR <= 1; Zin <= 1;
+        R6out = 1; OR = 1; Zin = 1;
+      end
+      T5: begin
+        Zlowout = 1; R2in = 1;
       end
 
-      T5: begin
-        ZLOout <= 1; R2in <= 1;
+    endcase
+  end
+
+endmodule
+
+
+// ============================================================
+// datapath_tb_and : AND R2, R5, R6   (opcode = 32'h112B0000)
+// ============================================================
+module datapath_tb_and;
+
+  reg PCout, Zlowout, MDRout, R5out, R6out;
+  reg MARin, Zin, PCin, MDRin, IRin, Yin;
+  reg IncPC, Read, AND, R2in, R5in, R6in;
+
+  reg Clock;
+  reg [31:0] Mdatain;
+
+  parameter Default    = 4'b0000,
+            Reg_load1a = 4'b0001, Reg_load1b = 4'b0010,   // load R5
+            Reg_load2a = 4'b0011, Reg_load2b = 4'b0100,   // load R6
+            Reg_load3a = 4'b0101, Reg_load3b = 4'b0110,   // optional load R2
+            T0         = 4'b0111,
+            T1         = 4'b1000,
+            T2         = 4'b1001,
+            T3         = 4'b1010,
+            T4         = 4'b1011,
+            T5         = 4'b1100;
+
+  reg [3:0] Present_state;
+
+  DATAPATH DUT(
+    PCout, Zlowout, MDRout, R5out, R6out,
+    MARin, Zin, PCin, MDRin, IRin, Yin,
+    IncPC, Read, AND, R2in, R5in, R6in,
+    Clock, Mdatain
+  );
+
+  initial begin
+    Clock = 1'b0;
+    forever #10 Clock = ~Clock;
+  end
+
+  initial begin
+    Present_state = Default;
+  end
+
+  always @(posedge Clock) begin
+    case (Present_state)
+      Default:    Present_state <= Reg_load1a;
+      Reg_load1a: Present_state <= Reg_load1b;
+      Reg_load1b: Present_state <= Reg_load2a;
+      Reg_load2a: Present_state <= Reg_load2b;
+      Reg_load2b: Present_state <= Reg_load3a;
+      Reg_load3a: Present_state <= Reg_load3b;
+      Reg_load3b: Present_state <= T0;
+      T0:         Present_state <= T1;
+      T1:         Present_state <= T2;
+      T2:         Present_state <= T3;
+      T3:         Present_state <= T4;
+      T4:         Present_state <= T5;
+      T5:         Present_state <= T5;
+      default:    Present_state <= Default;
+    endcase
+  end
+
+  always @(*) begin
+    PCout=0; Zlowout=0; MDRout=0; R5out=0; R6out=0;
+    MARin=0; Zin=0; PCin=0; MDRin=0; IRin=0; Yin=0;
+    IncPC=0; Read=0; AND=0; R2in=0; R5in=0; R6in=0;
+    Mdatain = 32'h00000000;
+
+    case (Present_state)
+
+      Reg_load1a: begin Mdatain=32'h00000034; Read=1; MDRin=1; end
+      Reg_load1b: begin MDRout=1; R5in=1; end
+
+      Reg_load2a: begin Mdatain=32'h00000045; Read=1; MDRin=1; end
+      Reg_load2b: begin MDRout=1; R6in=1; end
+
+      Reg_load3a: begin Mdatain=32'h00000067; Read=1; MDRin=1; end
+      Reg_load3b: begin MDRout=1; R2in=1; end
+
+      T0: begin PCout=1; MARin=1; IncPC=1; Zin=1; end
+      T1: begin
+        Zlowout=1; PCin=1; Read=1; MDRin=1;
+        Mdatain=32'h112B0000; // and R2, R5, R6
       end
+      T2: begin MDRout=1; IRin=1; end
+
+      T3: begin R5out=1; Yin=1; end
+      T4: begin R6out=1; AND=1; Zin=1; end
+      T5: begin Zlowout=1; R2in=1; end
+
+    endcase
+  end
+
+endmodule
+
+
+// ============================================================
+// datapath_tb_shl : SHL R2, R5, R6   (opcode = 32'h312B0000)
+// ============================================================
+module datapath_tb_shl;
+
+  reg PCout, Zlowout, MDRout, R5out, R6out;
+  reg MARin, Zin, PCin, MDRin, IRin, Yin;
+  reg IncPC, Read, SHL, R2in, R5in, R6in;
+
+  reg Clock;
+  reg [31:0] Mdatain;
+
+  parameter Default    = 4'b0000,
+            Reg_load1a = 4'b0001, Reg_load1b = 4'b0010,   // load R5
+            Reg_load2a = 4'b0011, Reg_load2b = 4'b0100,   // load R6 (shift amount)
+            Reg_load3a = 4'b0101, Reg_load3b = 4'b0110,   // optional load R2
+            T0         = 4'b0111,
+            T1         = 4'b1000,
+            T2         = 4'b1001,
+            T3         = 4'b1010,
+            T4         = 4'b1011,
+            T5         = 4'b1100;
+
+  reg [3:0] Present_state;
+
+  DATAPATH DUT(
+    PCout, Zlowout, MDRout, R5out, R6out,
+    MARin, Zin, PCin, MDRin, IRin, Yin,
+    IncPC, Read, SHL, R2in, R5in, R6in,
+    Clock, Mdatain
+  );
+
+  initial begin
+    Clock = 1'b0;
+    forever #10 Clock = ~Clock;
+  end
+
+  initial begin
+    Present_state = Default;
+  end
+
+  always @(posedge Clock) begin
+    case (Present_state)
+      Default:    Present_state <= Reg_load1a;
+      Reg_load1a: Present_state <= Reg_load1b;
+      Reg_load1b: Present_state <= Reg_load2a;
+      Reg_load2a: Present_state <= Reg_load2b;
+      Reg_load2b: Present_state <= Reg_load3a;
+      Reg_load3a: Present_state <= Reg_load3b;
+      Reg_load3b: Present_state <= T0;
+      T0:         Present_state <= T1;
+      T1:         Present_state <= T2;
+      T2:         Present_state <= T3;
+      T3:         Present_state <= T4;
+      T4:         Present_state <= T5;
+      T5:         Present_state <= T5;
+      default:    Present_state <= Default;
+    endcase
+  end
+
+  always @(*) begin
+    PCout=0; Zlowout=0; MDRout=0; R5out=0; R6out=0;
+    MARin=0; Zin=0; PCin=0; MDRin=0; IRin=0; Yin=0;
+    IncPC=0; Read=0; SHL=0; R2in=0; R5in=0; R6in=0;
+    Mdatain = 32'h00000000;
+
+    case (Present_state)
+
+      // R5 = 0x34
+      Reg_load1a: begin Mdatain=32'h00000034; Read=1; MDRin=1; end
+      Reg_load1b: begin MDRout=1; R5in=1; end
+
+      // R6 = 0x02 (shift amount)  <-- change if you want
+      Reg_load2a: begin Mdatain=32'h00000002; Read=1; MDRin=1; end
+      Reg_load2b: begin MDRout=1; R6in=1; end
+
+      // optional preload R2
+      Reg_load3a: begin Mdatain=32'h00000067; Read=1; MDRin=1; end
+      Reg_load3b: begin MDRout=1; R2in=1; end
+
+      // fetch
+      T0: begin PCout=1; MARin=1; IncPC=1; Zin=1; end
+      T1: begin
+        Zlowout=1; PCin=1; Read=1; MDRin=1;
+        Mdatain=32'h312B0000; // shl R2, R5, R6
+      end
+      T2: begin MDRout=1; IRin=1; end
+
+      // execute
+      T3: begin R5out=1; Yin=1; end
+      T4: begin R6out=1; SHL=1; Zin=1; end
+      T5: begin Zlowout=1; R2in=1; end
+
+    endcase
+  end
+
+endmodule
+
+
+// ============================================================
+// datapath_tb_div : DIV R3, R1      (opcode = 32'h61880000)
+// Like MUL TB: DIV in T4, then write LO (quotient) and HI (remainder)
+// ============================================================
+module datapath_tb_div;
+
+  reg PCout, Zlowout, Zhighout, MDRout, R3out, R1out;
+  reg MARin, Zin, PCin, MDRin, IRin, Yin;
+  reg IncPC, Read, DIV, LOin, HIin, R3in, R1in;
+
+  reg Clock;
+  reg [31:0] Mdatain;
+
+  parameter Default    = 4'b0000,
+            Reg_load1a = 4'b0001, Reg_load1b = 4'b0010, // load R3
+            Reg_load2a = 4'b0011, Reg_load2b = 4'b0100, // load R1
+            T0         = 4'b0111,
+            T1         = 4'b1000,
+            T2         = 4'b1001,
+            T3         = 4'b1010,
+            T4         = 4'b1011,
+            T5         = 4'b1100,
+            T6         = 4'b1101;
+
+  reg [3:0] Present_state;
+
+  // DUT (positional mapping; must match YOUR div-capable DATAPATH port order)
+  DATAPATH DUT(
+    PCout, Zlowout, Zhighout, MDRout, R3out, R1out,
+    MARin, Zin, PCin, MDRin, IRin, Yin,
+    IncPC, Read, DIV, LOin, HIin, R3in, R1in,
+    Clock, Mdatain
+  );
+
+  initial begin
+    Clock = 1'b0;
+    forever #10 Clock = ~Clock;
+  end
+
+  initial begin
+    Present_state = Default;
+  end
+
+  always @(posedge Clock) begin
+    case (Present_state)
+      Default:    Present_state <= Reg_load1a;
+      Reg_load1a: Present_state <= Reg_load1b;
+      Reg_load1b: Present_state <= Reg_load2a;
+      Reg_load2a: Present_state <= Reg_load2b;
+      Reg_load2b: Present_state <= T0;
+      T0:         Present_state <= T1;
+      T1:         Present_state <= T2;
+      T2:         Present_state <= T3;
+      T3:         Present_state <= T4;
+      T4:         Present_state <= T5;
+      T5:         Present_state <= T6;
+      T6:         Present_state <= T6;
+      default:    Present_state <= Default;
+    endcase
+  end
+
+  always @(*) begin
+    PCout=0; Zlowout=0; Zhighout=0; MDRout=0; R3out=0; R1out=0;
+    MARin=0; Zin=0; PCin=0; MDRin=0; IRin=0; Yin=0;
+    IncPC=0; Read=0; DIV=0; LOin=0; HIin=0; R3in=0; R1in=0;
+    Mdatain = 32'h00000000;
+
+    case (Present_state)
+
+      // preload R3 = 0x34 (dividend)
+      Reg_load1a: begin Mdatain=32'h00000034; Read=1; MDRin=1; end
+      Reg_load1b: begin MDRout=1; R3in=1; end
+
+      // preload R1 = 0x05 (divisor)  <-- change if you want
+      Reg_load2a: begin Mdatain=32'h00000005; Read=1; MDRin=1; end
+      Reg_load2b: begin MDRout=1; R1in=1; end
+
+      // fetch
+      T0: begin PCout=1; MARin=1; IncPC=1; Zin=1; end
+      T1: begin
+        Zlowout=1; PCin=1; Read=1; MDRin=1;
+        Mdatain=32'h61880000; // div R3, R1
+      end
+      T2: begin MDRout=1; IRin=1; end
+
+      // execute DIV
+      T3: begin R3out=1; Yin=1; end
+      T4: begin R1out=1; DIV=1; Zin=1; end
+
+      // write results
+      T5: begin Zlowout=1;  LOin=1; end   // LO <= quotient
+      T6: begin Zhighout=1; HIin=1; end   // HI <= remainder
 
     endcase
   end
