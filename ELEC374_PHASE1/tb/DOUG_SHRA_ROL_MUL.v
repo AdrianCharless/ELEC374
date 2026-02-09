@@ -26,12 +26,68 @@ module datapath_tb_shra;
   reg [3:0] Present_state;
 
   // DUT (positional mapping; must match your DATAPATH module port order)
-  DATAPATH DUT(
-    PCout, Zlowout, MDRout, R0out, R4out,
-    MARin, Zin, PCin, MDRin, IRin, Yin,
-    IncPC, Read, SHRA, R7in, R0in, R4in,
-    Clock, Mdatain
-  );
+  
+  // optional: hook debug outputs so you can view them
+wire [31:0] IR, Outport, BusMuxOut, Zhi, Zlo;
+
+DATAPATH DUT(
+  // OUT selects you use
+  .PCout(PCout),
+  .ZLOout(Zlowout),
+  .MDRout(MDRout),
+  .R0out(R0out),
+  .R4out(R4out),
+
+  // IN enables you use
+  .MARin(MARin),
+  .Zin(Zin),
+  .PCin(PCin),
+  .MDRin(MDRin),
+  .IRin(IRin),
+  .Yin(Yin),
+  .R7in(R7in),
+  .R0in(R0in),
+  .R4in(R4in),
+
+  // ALU op you use
+  .SHRA(SHRA),
+
+  // memory
+  .Read(Read),
+  .Mdatain(Mdatain),
+
+  // clock/clear
+  .clock(Clock),
+  .clear(1'b0),
+
+  // debug outputs (optional but handy)
+  .IR(IR),
+  .Outport(Outport),
+  .BusMuxOut(BusMuxOut),
+  .Zhi(Zhi),
+  .Zlo(Zlo),
+
+  // tie off EVERYTHING else to 0
+  .R1out(1'b0), .R2out(1'b0), .R3out(1'b0),
+  .R5out(1'b0), .R6out(1'b0), .R7out(1'b0),
+  .R8out(1'b0), .R9out(1'b0), .R10out(1'b0), .R11out(1'b0),
+  .R12out(1'b0), .R13out(1'b0), .R14out(1'b0), .R15out(1'b0),
+  .HIout(1'b0), .LOout(1'b0), .ZHIout(1'b0),
+  .InPortout(1'b0), .Cout(1'b0),
+
+  .R1in(1'b0), .R2in(1'b0), .R3in(1'b0),
+  .R5in(1'b0), .R6in(1'b0),
+  .R8in(1'b0), .R9in(1'b0), .R10in(1'b0), .R11in(1'b0),
+  .R12in(1'b0), .R13in(1'b0), .R14in(1'b0), .R15in(1'b0),
+  .HIin(1'b0), .LOin(1'b0),
+
+  .ADD(1'b0), .SUB(1'b0), .AND(1'b0), .OR(1'b0),
+  .SHR(1'b0), .SHL(1'b0), .ROR(1'b0), .ROL(1'b0),
+  .MUL(1'b0), .DIV(1'b0), .NEG(1'b0), .NOT(1'b0),
+
+  .IncPC(IncPC) // you DO use this
+);
+
 
   // Clock
   initial begin
@@ -136,6 +192,19 @@ module datapath_tb_shra;
 
     endcase
   end
+
+
+initial begin
+    $dumpfile("waveforms.vcd");
+    $dumpvars(0, DUT);
+end
+
+
+initial begin
+    #127500;
+    $display("Simulation complete.");
+    $finish;
+end
 
 endmodule
 
