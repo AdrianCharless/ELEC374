@@ -185,13 +185,13 @@ endmodule
 
 
 // ============================================================
-// datapath_tb_and : AND R2, R5, R6   (opcode = 32'h112B0000)
+// datapath_tb_add : ADD R2, R5, R6   (opcode = 32'h012B0000)
 // ============================================================
-module datapath_tb_and;
+module datapath_tb_add;
 
   reg PCout, Zlowout, MDRout, R5out, R6out;
   reg MARin, Zin, PCin, MDRin, IRin, Yin;
-  reg IncPC, Read, AND, R2in, R5in, R6in;
+  reg IncPC, Read, ADD, R2in, R5in, R6in;
 
   reg Clock;
   reg [31:0] Mdatain;
@@ -209,11 +209,55 @@ module datapath_tb_and;
 
   reg [3:0] Present_state;
 
+  wire [31:0] IR, Outport, BusMuxOut, Zhi, Zlo;
+
   DATAPATH DUT(
-    PCout, Zlowout, MDRout, R5out, R6out,
-    MARin, Zin, PCin, MDRin, IRin, Yin,
-    IncPC, Read, AND, R2in, R5in, R6in,
-    Clock, Mdatain
+    .PCout(PCout),
+    .ZLOout(Zlowout),
+    .MDRout(MDRout),
+    .R5out(R5out),
+    .R6out(R6out),
+
+    .MARin(MARin),
+    .Zin(Zin),
+    .PCin(PCin),
+    .MDRin(MDRin),
+    .IRin(IRin),
+    .Yin(Yin),
+    .R2in(R2in),
+    .R5in(R5in),
+    .R6in(R6in),
+
+    .ADD(ADD),
+
+    .Read(Read),
+    .Mdatain(Mdatain),
+
+    .clock(Clock),
+    .clear(1'b0),
+
+    .IR(IR),
+    .Outport(Outport),
+    .BusMuxOut(BusMuxOut),
+    .Zhi(Zhi),
+    .Zlo(Zlo),
+
+    .R0out(1'b0), .R1out(1'b0), .R2out(1'b0), .R3out(1'b0), .R4out(1'b0),
+    .R7out(1'b0), .R8out(1'b0), .R9out(1'b0), .R10out(1'b0), .R11out(1'b0),
+    .R12out(1'b0), .R13out(1'b0), .R14out(1'b0), .R15out(1'b0),
+    .HIout(1'b0), .LOout(1'b0), .ZHIout(1'b0),
+    .InPortout(1'b0), .Cout(1'b0),
+
+    .R0in(1'b0), .R1in(1'b0), .R3in(1'b0), .R4in(1'b0),
+    .R7in(1'b0), .R8in(1'b0), .R9in(1'b0), .R10in(1'b0), .R11in(1'b0),
+    .R12in(1'b0), .R13in(1'b0), .R14in(1'b0), .R15in(1'b0),
+    .HIin(1'b0), .LOin(1'b0),
+
+    .SUB(1'b0), .AND(1'b0), .OR(1'b0), .SHRA(1'b0),
+    .SHR(1'b0), .SHL(1'b0), .ROR(1'b0), .ROL(1'b0),
+    .MUL(1'b0), .DIV(1'b0), .NEG(1'b0), .NOT(1'b0),
+
+    .IncPC(IncPC)
   );
 
   initial begin
@@ -247,10 +291,14 @@ module datapath_tb_and;
   always @(*) begin
     PCout=0; Zlowout=0; MDRout=0; R5out=0; R6out=0;
     MARin=0; Zin=0; PCin=0; MDRin=0; IRin=0; Yin=0;
-    IncPC=0; Read=0; AND=0; R2in=0; R5in=0; R6in=0;
+    IncPC=0; Read=0; ADD=0; R2in=0; R5in=0; R6in=0;
     Mdatain = 32'h00000000;
 
     case (Present_state)
+
+      Default: begin
+        // nothing special; everything already cleared
+      end
 
       Reg_load1a: begin Mdatain=32'h00000034; Read=1; MDRin=1; end
       Reg_load1b: begin MDRout=1; R5in=1; end
@@ -264,12 +312,12 @@ module datapath_tb_and;
       T0: begin PCout=1; MARin=1; IncPC=1; Zin=1; end
       T1: begin
         Zlowout=1; PCin=1; Read=1; MDRin=1;
-        Mdatain=32'h112B0000; // and R2, R5, R6
+        Mdatain=32'h012B0000; // add R2, R5, R6
       end
       T2: begin MDRout=1; IRin=1; end
 
       T3: begin R5out=1; Yin=1; end
-      T4: begin R6out=1; AND=1; Zin=1; end
+      T4: begin R6out=1; ADD=1; Zin=1; end
       T5: begin Zlowout=1; R2in=1; end
 
     endcase
@@ -303,11 +351,55 @@ module datapath_tb_shl;
 
   reg [3:0] Present_state;
 
+  wire [31:0] IR, Outport, BusMuxOut, Zhi, Zlo;
+
   DATAPATH DUT(
-    PCout, Zlowout, MDRout, R5out, R6out,
-    MARin, Zin, PCin, MDRin, IRin, Yin,
-    IncPC, Read, SHL, R2in, R5in, R6in,
-    Clock, Mdatain
+    .PCout(PCout),
+    .ZLOout(Zlowout),
+    .MDRout(MDRout),
+    .R5out(R5out),
+    .R6out(R6out),
+
+    .MARin(MARin),
+    .Zin(Zin),
+    .PCin(PCin),
+    .MDRin(MDRin),
+    .IRin(IRin),
+    .Yin(Yin),
+    .R2in(R2in),
+    .R5in(R5in),
+    .R6in(R6in),
+
+    .SHL(SHL),
+
+    .Read(Read),
+    .Mdatain(Mdatain),
+
+    .clock(Clock),
+    .clear(1'b0),
+
+    .IR(IR),
+    .Outport(Outport),
+    .BusMuxOut(BusMuxOut),
+    .Zhi(Zhi),
+    .Zlo(Zlo),
+
+    .R0out(1'b0), .R1out(1'b0), .R2out(1'b0), .R3out(1'b0), .R4out(1'b0),
+    .R7out(1'b0), .R8out(1'b0), .R9out(1'b0), .R10out(1'b0), .R11out(1'b0),
+    .R12out(1'b0), .R13out(1'b0), .R14out(1'b0), .R15out(1'b0),
+    .HIout(1'b0), .LOout(1'b0), .ZHIout(1'b0),
+    .InPortout(1'b0), .Cout(1'b0),
+
+    .R0in(1'b0), .R1in(1'b0), .R3in(1'b0), .R4in(1'b0),
+    .R7in(1'b0), .R8in(1'b0), .R9in(1'b0), .R10in(1'b0), .R11in(1'b0),
+    .R12in(1'b0), .R13in(1'b0), .R14in(1'b0), .R15in(1'b0),
+    .HIin(1'b0), .LOin(1'b0),
+
+    .ADD(1'b0), .SUB(1'b0), .AND(1'b0), .OR(1'b0), .SHRA(1'b0),
+    .SHR(1'b0), .ROR(1'b0), .ROL(1'b0),
+    .MUL(1'b0), .DIV(1'b0), .NEG(1'b0), .NOT(1'b0),
+
+    .IncPC(IncPC)
   );
 
   initial begin
@@ -346,11 +438,15 @@ module datapath_tb_shl;
 
     case (Present_state)
 
+      Default: begin
+        // nothing special; everything already cleared
+      end
+
       // R5 = 0x34
       Reg_load1a: begin Mdatain=32'h00000034; Read=1; MDRin=1; end
       Reg_load1b: begin MDRout=1; R5in=1; end
 
-      // R6 = 0x02 (shift amount)  <-- change if you want
+      // R6 = 0x02 (shift amount)
       Reg_load2a: begin Mdatain=32'h00000002; Read=1; MDRin=1; end
       Reg_load2b: begin MDRout=1; R6in=1; end
 
@@ -403,12 +499,56 @@ module datapath_tb_div;
 
   reg [3:0] Present_state;
 
-  // DUT (positional mapping; must match YOUR div-capable DATAPATH port order)
+  wire [31:0] IR, Outport, BusMuxOut, Zhi, Zlo;
+
   DATAPATH DUT(
-    PCout, Zlowout, Zhighout, MDRout, R3out, R1out,
-    MARin, Zin, PCin, MDRin, IRin, Yin,
-    IncPC, Read, DIV, LOin, HIin, R3in, R1in,
-    Clock, Mdatain
+    .PCout(PCout),
+    .ZLOout(Zlowout),
+    .ZHIout(Zhighout),
+    .MDRout(MDRout),
+    .R3out(R3out),
+    .R1out(R1out),
+
+    .MARin(MARin),
+    .Zin(Zin),
+    .PCin(PCin),
+    .MDRin(MDRin),
+    .IRin(IRin),
+    .Yin(Yin),
+    .LOin(LOin),
+    .HIin(HIin),
+    .R3in(R3in),
+    .R1in(R1in),
+
+    .DIV(DIV),
+
+    .Read(Read),
+    .Mdatain(Mdatain),
+
+    .clock(Clock),
+    .clear(1'b0),
+
+    .IR(IR),
+    .Outport(Outport),
+    .BusMuxOut(BusMuxOut),
+    .Zhi(Zhi),
+    .Zlo(Zlo),
+
+    .R0out(1'b0), .R2out(1'b0), .R4out(1'b0), .R5out(1'b0), .R6out(1'b0),
+    .R7out(1'b0), .R8out(1'b0), .R9out(1'b0), .R10out(1'b0), .R11out(1'b0),
+    .R12out(1'b0), .R13out(1'b0), .R14out(1'b0), .R15out(1'b0),
+    .HIout(1'b0), .LOout(1'b0),
+    .InPortout(1'b0), .Cout(1'b0),
+
+    .R0in(1'b0), .R2in(1'b0), .R4in(1'b0), .R5in(1'b0), .R6in(1'b0),
+    .R7in(1'b0), .R8in(1'b0), .R9in(1'b0), .R10in(1'b0), .R11in(1'b0),
+    .R12in(1'b0), .R13in(1'b0), .R14in(1'b0), .R15in(1'b0),
+
+    .ADD(1'b0), .SUB(1'b0), .AND(1'b0), .OR(1'b0), .SHRA(1'b0),
+    .SHR(1'b0), .SHL(1'b0), .ROR(1'b0), .ROL(1'b0),
+    .MUL(1'b0), .NEG(1'b0), .NOT(1'b0),
+
+    .IncPC(IncPC)
   );
 
   initial begin
@@ -446,11 +586,15 @@ module datapath_tb_div;
 
     case (Present_state)
 
+      Default: begin
+        // nothing special; everything already cleared
+      end
+
       // preload R3 = 0x34 (dividend)
       Reg_load1a: begin Mdatain=32'h00000034; Read=1; MDRin=1; end
       Reg_load1b: begin MDRout=1; R3in=1; end
 
-      // preload R1 = 0x05 (divisor)  <-- change if you want
+      // preload R1 = 0x05 (divisor)
       Reg_load2a: begin Mdatain=32'h00000005; Read=1; MDRin=1; end
       Reg_load2b: begin MDRout=1; R1in=1; end
 
@@ -472,5 +616,7 @@ module datapath_tb_div;
 
     endcase
   end
+
+endmodule
 
 endmodule
