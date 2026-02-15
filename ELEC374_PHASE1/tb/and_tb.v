@@ -1,6 +1,4 @@
 `timescale 1ns/10ps
-// datpath_tb_shra.v
-`timescale 1ns/10ps
 
 module and_tb;
     reg PCout, ZLOout, MDRout, R5out, R6out; // add any other signals to see in your simulation
