@@ -499,4 +499,17 @@ module datapath_tb_mul;
     endcase
   end
 
+  initial begin
+    $dumpfile("waveforms.vcd");
+    $dumpvars(0, DUT);
+  end
+
+  initial begin
+    #127500;
+    $display("Simulation complete.");
+    $finish;
+  end
+
 endmodule
+
+
