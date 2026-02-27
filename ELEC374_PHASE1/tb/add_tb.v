@@ -1,16 +1,13 @@
-// ============================================================================
-// SUB (Subtraction) Datapath Testbench - Phase 1
-// Tests: sub R2, R5, R6
-// Same pattern as OR/SHRA: named ports + tie-off
-// ============================================================================
-
 `timescale 1ns/10ps
 
-module sub_tb;
+// ============================================================
+// add_tb : ADD R2, R5, R6   (opcode = 32'h012B0000)
+// ============================================================
+module add_tb;
 
   reg PCout, Zlowout, MDRout, R5out, R6out;
   reg MARin, Zin, PCin, MDRin, IRin, Yin;
-  reg IncPC, Read, SUB, R2in, R5in, R6in;
+  reg IncPC, Read, ADD, R2in, R5in, R6in;
 
   reg Clock;
   reg [31:0] Mdatain;
@@ -47,7 +44,7 @@ module sub_tb;
     .R5in(R5in),
     .R6in(R6in),
 
-    .SUB(SUB),
+    .ADD(ADD),
 
     .Read(Read),
     .Mdatain(Mdatain),
@@ -72,7 +69,7 @@ module sub_tb;
     .R12in(1'b0), .R13in(1'b0), .R14in(1'b0), .R15in(1'b0),
     .HIin(1'b0), .LOin(1'b0),
 
-    .ADD(1'b0), .AND(1'b0), .OR(1'b0), .SHRA(1'b0),
+    .SUB(1'b0), .AND(1'b0), .OR(1'b0), .SHRA(1'b0),
     .SHR(1'b0), .SHL(1'b0), .ROR(1'b0), .ROL(1'b0),
     .MUL(1'b0), .DIV(1'b0), .NEG(1'b0), .NOT(1'b0),
 
@@ -102,7 +99,7 @@ module sub_tb;
       T2:         Present_state <= T3;
       T3:         Present_state <= T4;
       T4:         Present_state <= T5;
-      T5:         Present_state <= T5;   // hold at end
+      T5:         Present_state <= T5;
       default:    Present_state <= Default;
     endcase
   end
@@ -110,7 +107,7 @@ module sub_tb;
   always @(*) begin
     PCout=0; Zlowout=0; MDRout=0; R5out=0; R6out=0;
     MARin=0; Zin=0; PCin=0; MDRin=0; IRin=0; Yin=0;
-    IncPC=0; Read=0; SUB=0; R2in=0; R5in=0; R6in=0;
+    IncPC=0; Read=0; ADD=0; R2in=0; R5in=0; R6in=0;
     Mdatain = 32'h00000000;
 
     case (Present_state)
@@ -119,61 +116,25 @@ module sub_tb;
         // nothing special; everything already cleared
       end
 
-      // Preload R5 = 0x34 (52)
-      Reg_load1a: begin
-        Mdatain = 32'h00000034;
-        Read    = 1;
-        MDRin   = 1;
-      end
-      Reg_load1b: begin
-        MDRout = 1;
-        R5in   = 1;
-      end
+      Reg_load1a: begin Mdatain=32'h00000034; Read=1; MDRin=1; end
+      Reg_load1b: begin MDRout=1; R5in=1; end
 
-      // Preload R6 = 0x12 (18)
-      Reg_load2a: begin
-        Mdatain = 32'h00000012;
-        Read    = 1;
-        MDRin   = 1;
-      end
-      Reg_load2b: begin
-        MDRout = 1;
-        R6in   = 1;
-      end
+      Reg_load2a: begin Mdatain=32'h00000045; Read=1; MDRin=1; end
+      Reg_load2b: begin MDRout=1; R6in=1; end
 
-      // Optional preload R2
-      Reg_load3a: begin
-        Mdatain = 32'h00000067;
-        Read    = 1;
-        MDRin   = 1;
-      end
-      Reg_load3b: begin
-        MDRout = 1;
-        R2in   = 1;
-      end
+      Reg_load3a: begin Mdatain=32'h00000067; Read=1; MDRin=1; end
+      Reg_load3b: begin MDRout=1; R2in=1; end
 
-      // Fetch
-      T0: begin
-        PCout = 1; MARin = 1; IncPC = 1; Zin = 1;
-      end
+      T0: begin PCout=1; MARin=1; IncPC=1; Zin=1; end
       T1: begin
-        Zlowout = 1; PCin = 1; Read = 1; MDRin = 1;
-        Mdatain = 32'h0AAC0000;  // sub R2, R5, R6
+        Zlowout=1; PCin=1; Read=1; MDRin=1;
+        Mdatain=32'h012B0000; // add R2, R5, R6
       end
-      T2: begin
-        MDRout = 1; IRin = 1;
-      end
+      T2: begin MDRout=1; IRin=1; end
 
-      // Execute SUB
-      T3: begin
-        R5out = 1; Yin = 1;
-      end
-      T4: begin
-        R6out = 1; SUB = 1; Zin = 1;
-      end
-      T5: begin
-        Zlowout = 1; R2in = 1;   // R2 <- R5 - R6 = 34 = 0x22
-      end
+      T3: begin R5out=1; Yin=1; end
+      T4: begin R6out=1; ADD=1; Zin=1; end
+      T5: begin Zlowout=1; R2in=1; end
 
     endcase
   end

@@ -1,24 +1,19 @@
-// ============================================================================
-// ROR (Rotate Right) Datapath Testbench - Phase 1
-// Tests: ror R7, R0, R4
-// Same pattern as OR/SHRA: named ports + tie-off
-// ============================================================================
-
+// rol_tb.v
 `timescale 1ns/10ps
 
-module ror_tb;
+module rol_tb;
 
   reg PCout, Zlowout, MDRout, R0out, R4out;
   reg MARin, Zin, PCin, MDRin, IRin, Yin;
-  reg IncPC, Read, ROR, R7in, R0in, R4in;
+  reg IncPC, Read, ROL, R7in, R0in, R4in;
 
   reg Clock;
   reg [31:0] Mdatain;
 
   parameter Default    = 4'b0000,
-            Reg_load1a = 4'b0001, Reg_load1b = 4'b0010,   // load R0
-            Reg_load2a = 4'b0011, Reg_load2b = 4'b0100,   // load R4 (rotate count)
-            Reg_load3a = 4'b0101, Reg_load3b = 4'b0110,   // optional load R7
+            Reg_load1a = 4'b0001, Reg_load1b = 4'b0010,
+            Reg_load2a = 4'b0011, Reg_load2b = 4'b0100,
+            Reg_load3a = 4'b0101, Reg_load3b = 4'b0110,
             T0         = 4'b0111,
             T1         = 4'b1000,
             T2         = 4'b1001,
@@ -47,7 +42,7 @@ module ror_tb;
     .R0in(R0in),
     .R4in(R4in),
 
-    .ROR(ROR),
+    .ROL(ROL),
 
     .Read(Read),
     .Mdatain(Mdatain),
@@ -74,8 +69,8 @@ module ror_tb;
     .R12in(1'b0), .R13in(1'b0), .R14in(1'b0), .R15in(1'b0),
     .HIin(1'b0), .LOin(1'b0),
 
-    .ADD(1'b0), .SUB(1'b0), .AND(1'b0), .OR(1'b0), .SHRA(1'b0),
-    .SHR(1'b0), .SHL(1'b0), .ROL(1'b0),
+    .ADD(1'b0), .SUB(1'b0), .AND(1'b0), .OR(1'b0),
+    .SHR(1'b0), .SHRA(1'b0), .SHL(1'b0), .ROR(1'b0),
     .MUL(1'b0), .DIV(1'b0), .NEG(1'b0), .NOT(1'b0),
 
     .IncPC(IncPC)
@@ -104,7 +99,7 @@ module ror_tb;
       T2:         Present_state <= T3;
       T3:         Present_state <= T4;
       T4:         Present_state <= T5;
-      T5:         Present_state <= T5;   // hold at end
+      T5:         Present_state <= T5;
       default:    Present_state <= Default;
     endcase
   end
@@ -112,71 +107,33 @@ module ror_tb;
   always @(*) begin
     PCout=0; Zlowout=0; MDRout=0; R0out=0; R4out=0;
     MARin=0; Zin=0; PCin=0; MDRin=0; IRin=0; Yin=0;
-    IncPC=0; Read=0; ROR=0; R7in=0; R0in=0; R4in=0;
+    IncPC=0; Read=0; ROL=0; R7in=0; R0in=0; R4in=0;
     Mdatain = 32'h00000000;
 
     case (Present_state)
-
       Default: begin
         // nothing special; everything already cleared
       end
 
-      // Preload R0 = 0x12 (18)
-      Reg_load1a: begin
-        Mdatain = 32'h00000012;
-        Read    = 1;
-        MDRin   = 1;
-      end
-      Reg_load1b: begin
-        MDRout = 1;
-        R0in   = 1;
-      end
+      Reg_load1a: begin Mdatain=32'h00000034; Read=1; MDRin=1; end
+      Reg_load1b: begin MDRout=1; R0in=1; end
 
-      // Preload R4 = 4 (rotate count)
-      Reg_load2a: begin
-        Mdatain = 32'h00000004;
-        Read    = 1;
-        MDRin   = 1;
-      end
-      Reg_load2b: begin
-        MDRout = 1;
-        R4in   = 1;
-      end
+      Reg_load2a: begin Mdatain=32'h00000045; Read=1; MDRin=1; end
+      Reg_load2b: begin MDRout=1; R4in=1; end
 
-      // Optional preload R7
-      Reg_load3a: begin
-        Mdatain = 32'h00000055;
-        Read    = 1;
-        MDRin   = 1;
-      end
-      Reg_load3b: begin
-        MDRout = 1;
-        R7in   = 1;
-      end
+      Reg_load3a: begin Mdatain=32'h00000067; Read=1; MDRin=1; end
+      Reg_load3b: begin MDRout=1; R7in=1; end
 
-      // Fetch
-      T0: begin
-        PCout = 1; MARin = 1; IncPC = 1; Zin = 1;
-      end
+      T0: begin PCout=1; MARin=1; IncPC=1; Zin=1; end
       T1: begin
-        Zlowout = 1; PCin = 1; Read = 1; MDRin = 1;
-        Mdatain = 32'h3B820000;  // ror R7, R0, R4
+        Zlowout=1; PCin=1; Read=1; MDRin=1;
+        Mdatain=32'h43820000; // rol R7, R0, R4
       end
-      T2: begin
-        MDRout = 1; IRin = 1;
-      end
+      T2: begin MDRout=1; IRin=1; end
 
-      // Execute ROR
-      T3: begin
-        R0out = 1; Yin = 1;
-      end
-      T4: begin
-        R4out = 1; ROR = 1; Zin = 1;
-      end
-      T5: begin
-        Zlowout = 1; R7in = 1;
-      end
-
+      T3: begin R0out=1; Yin=1; end
+      T4: begin R4out=1; ROL=1; Zin=1; end
+      T5: begin Zlowout=1; R7in=1; end
     endcase
   end
 
