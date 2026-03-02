@@ -1,8 +1,10 @@
 `timescale 1ns/10ps
 
 // ============================================================
-// div_tb : DIV R3, R1      (opcode = 32'h61880000)
-// Like MUL TB: DIV in T4, then write LO (quotient) and HI (remainder)
+// div_tb : DIV R3, R1  (opcode = 32'h61880000)
+// Updated to:
+//  1) connect DATAPATH div_by_zero_flag output
+//  2) optionally test divide-by-zero and signed division
 // ============================================================
 module div_tb;
 
@@ -27,7 +29,11 @@ module div_tb;
   reg [3:0] Present_state;
 
   wire [31:0] IR, Outport, BusMuxOut, Zhi, Zlo;
+  wire        div_by_zero_flag;   // NEW: exposed from DATAPATH
 
+  // ------------------------------------------------------------
+  // DUT
+  // ------------------------------------------------------------
   DATAPATH DUT(
     .PCout(PCout),
     .ZLOout(Zlowout),
@@ -61,6 +67,9 @@ module div_tb;
     .Zhi(Zhi),
     .Zlo(Zlo),
 
+    // NEW output
+    .div_by_zero_flag(div_by_zero_flag),
+
     .R0out(1'b0), .R2out(1'b0), .R4out(1'b0), .R5out(1'b0), .R6out(1'b0),
     .R7out(1'b0), .R8out(1'b0), .R9out(1'b0), .R10out(1'b0), .R11out(1'b0),
     .R12out(1'b0), .R13out(1'b0), .R14out(1'b0), .R15out(1'b0),
@@ -78,15 +87,24 @@ module div_tb;
     .IncPC(IncPC)
   );
 
+  // ------------------------------------------------------------
+  // Clock
+  // ------------------------------------------------------------
   initial begin
     Clock = 1'b0;
     forever #10 Clock = ~Clock;
   end
 
+  // ------------------------------------------------------------
+  // State init
+  // ------------------------------------------------------------
   initial begin
     Present_state = Default;
   end
 
+  // ------------------------------------------------------------
+  // State transitions
+  // ------------------------------------------------------------
   always @(posedge Clock) begin
     case (Present_state)
       Default:    Present_state <= Reg_load1a;
@@ -105,6 +123,9 @@ module div_tb;
     endcase
   end
 
+  // ------------------------------------------------------------
+  // Control signal generation
+  // ------------------------------------------------------------
   always @(*) begin
     PCout=0; Zlowout=0; Zhighout=0; MDRout=0; R3out=0; R1out=0;
     MARin=0; Zin=0; PCin=0; MDRin=0; IRin=0; Yin=0;
@@ -117,12 +138,30 @@ module div_tb;
         // nothing special; everything already cleared
       end
 
-      // preload R3 = 0x34 (dividend)
-      Reg_load1a: begin Mdatain=32'h00000034; Read=1; MDRin=1; end
+      // --------------------------------------------------------
+      // Choose your test values here:
+      //
+      // 1) Normal unsigned: 0x34 / 0x05  => 52/5  => Q=0x0A, R=0x02
+      // 2) Divide by zero:  0x34 / 0x00  => flag=1, Q=0xFFFFFFFF, R=0
+      // 3) Signed example: -7 / 3:
+      //      A = 0xFFFFFFF9, B=0x00000003 => Q=0xFFFFFFFE (-2), R=0xFFFFFFFF (-1)
+      // --------------------------------------------------------
+
+      // preload R3 = dividend
+      Reg_load1a: begin
+        // Mdatain = 32'h00000034;   // 52
+        Mdatain = 32'hFFFFFFF9;      // -7  (signed test)
+        Read=1; MDRin=1;
+      end
       Reg_load1b: begin MDRout=1; R3in=1; end
 
-      // preload R1 = 0x05 (divisor)
-      Reg_load2a: begin Mdatain=32'h00000005; Read=1; MDRin=1; end
+      // preload R1 = divisor
+      Reg_load2a: begin
+        // Mdatain = 32'h00000005;   // 5  (normal)
+        // Mdatain = 32'h00000000;   // 0  (divide by zero)
+        Mdatain = 32'h00000003;      // 3  (signed test)
+        Read=1; MDRin=1;
+      end
       Reg_load2b: begin MDRout=1; R1in=1; end
 
       // fetch
