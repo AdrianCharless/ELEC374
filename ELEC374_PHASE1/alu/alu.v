@@ -9,7 +9,8 @@ module ALU(
     input [31:0]        A,          // First operand (from Y register)
     input [31:0]        B,          // Second operand (from bus)
     output [31:0]       ZLO,        // Lower 32 bits of result
-    output [31:0]       ZHI         // Upper 32 bits (used for mul/div)
+    output [31:0]       ZHI,        // Upper 32 bits (used for mul/div)
+    output              div_by_zero // NEW
 );
 
     // ========================================================================
@@ -47,10 +48,13 @@ module ALU(
     wire [31:0] neg_result;
     wire [31:0] not_result;
 
+    // NEW: internal div-by-zero from DIV module
+    wire div_by_zero_internal;
+
     // ========================================================================
     // Instantiate all ALU operation modules
     // ========================================================================
-    
+
     // Addition
     ADD32 adder_inst (
         .A(A),
@@ -128,7 +132,8 @@ module ALU(
         .A(A),
         .B(B),
         .quotient(div_quotient),
-        .remainder(div_remainder)
+        .remainder(div_remainder),
+        .div_by_zero(div_by_zero_internal)   // NEW
     );
 
     // Negate (2's complement)
@@ -159,67 +164,67 @@ module ALU(
                 result_lo = add_result;
                 result_hi = 32'h00000000;
             end
-            
+
             OP_SUB: begin
                 result_lo = sub_result;
                 result_hi = 32'h00000000;
             end
-            
+
             OP_AND: begin
                 result_lo = and_result;
                 result_hi = 32'h00000000;
             end
-            
+
             OP_OR: begin
                 result_lo = or_result;
                 result_hi = 32'h00000000;
             end
-            
+
             OP_SHR: begin
                 result_lo = shr_result;
                 result_hi = 32'h00000000;
             end
-            
+
             OP_SHRA: begin
                 result_lo = shra_result;
                 result_hi = 32'h00000000;
             end
-            
+
             OP_SHL: begin
                 result_lo = shl_result;
                 result_hi = 32'h00000000;
             end
-            
+
             OP_ROR: begin
                 result_lo = ror_result;
                 result_hi = 32'h00000000;
             end
-            
+
             OP_ROL: begin
                 result_lo = rol_result;
                 result_hi = 32'h00000000;
             end
-            
+
             OP_MUL: begin
                 result_lo = mul_lo;
                 result_hi = mul_hi;
             end
-            
+
             OP_DIV: begin
                 result_lo = div_quotient;   // Quotient
                 result_hi = div_remainder;  // Remainder
             end
-            
+
             OP_NEG: begin
                 result_lo = neg_result;
                 result_hi = 32'h00000000;
             end
-            
+
             OP_NOT: begin
                 result_lo = not_result;
                 result_hi = 32'h00000000;
             end
-            
+
             default: begin
                 result_lo = 32'h00000000;
                 result_hi = 32'h00000000;
@@ -231,6 +236,7 @@ module ALU(
     assign ZLO = result_lo;
     assign ZHI = result_hi;
 
+    // NEW: expose flag (best practice: only meaningful for DIV)
+    assign div_by_zero = (opcode == OP_DIV) ? div_by_zero_internal : 1'b0;
+
 endmodule
-
-
