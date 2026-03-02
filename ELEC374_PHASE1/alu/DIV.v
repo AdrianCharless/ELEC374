@@ -1,6 +1,6 @@
 module DIV (
-    input  [31:0] A,
-    input  [31:0] B,
+    input  [31:0] A,              // dividend (signed 2's complement)
+    input  [31:0] B,              // divisor  (signed 2's complement)
     output [31:0] quotient,
     output [31:0] remainder,
     output reg    div_by_zero
@@ -13,7 +13,7 @@ module DIV (
     integer i;
 
     always @(*) begin
-        // Defaults
+        // Defaults (avoid latches)
         Q = 32'd0;
         R = 32'd0;
         Qmag = 32'd0;
@@ -21,10 +21,11 @@ module DIV (
         divisor = 32'd0;
         div_by_zero = 1'b0;
 
+        // Signs
         signA = A[31];
         signB = B[31];
 
-        // abs values (2's complement)
+        // Absolute values (2's complement)
         absA = signA ? (~A + 32'd1) : A;
         absB = signB ? (~B + 32'd1) : B;
 
@@ -34,7 +35,7 @@ module DIV (
             R = 32'h00000000;
             div_by_zero = 1'b1;
         end
-        // Signed overflow case: -2^31 / -1
+        // Overflow guard: (-2^31) / (-1)
         else if (A == 32'h80000000 && B == 32'hFFFFFFFF) begin
             Q = 32'h80000000;
             R = 32'h00000000;
@@ -42,7 +43,7 @@ module DIV (
         else begin
             divisor = absB;
 
-            // Unsigned restoring division on magnitudes
+            // Unsigned restoring division on magnitudes: absA / absB
             for (i = 31; i >= 0; i = i - 1) begin
                 Rmag = Rmag << 1;
                 Rmag[0] = absA[i];
@@ -55,12 +56,13 @@ module DIV (
                 end
             end
 
+            // Quotient sign = signA XOR signB
             signQ = signA ^ signB;
 
             // Apply sign to quotient
             Q = signQ ? (~Qmag + 32'd1) : Qmag;
 
-            // Remainder follows dividend
+            // Remainder follows dividend sign
             R = signA ? (~Rmag + 32'd1) : Rmag;
         end
     end
