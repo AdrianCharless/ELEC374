@@ -11,7 +11,7 @@ module DATAPATH (
     input ZHIout, input ZLOout,
     input PCout, input MDRout,
     input InPortout,  // not used in Phase 1, but BUS.v has it
-    input Cout,       // not used in Phase 1, but BUS.v has it (sign extended C source in later phases, phase 2 i think)
+    input Cout,       // not used in Phase 1, but BUS.v has it
 
     // register load enable signals from control unit (select/encode) (simulated in phase 1)
     input R0in,  input R1in,  input R2in,  input R3in,
@@ -40,13 +40,15 @@ module DATAPATH (
 
     // not used in phase 1
     output [31:0] IR,
-    //output [31:0] MDRoutput,
     output [31:0] Outport,
 
     // for phase 1 debugging (can remove later)
     output [31:0] BusMuxOut,
     output [31:0] Zhi,
-    output [31:0] Zlo
+    output [31:0] Zlo,
+
+    // NEW: expose divide-by-zero flag to top level
+    output        div_by_zero_flag
 );
 
     // internal wires connecting components to bus
@@ -60,6 +62,7 @@ module DATAPATH (
     wire [31:0] BusMuxInMAR;
     wire [31:0] BusMuxInY;
     wire [31:0] BusMuxInZHI, BusMuxInZLO;
+
     // not used in phase 1
     wire [31:0] BusMuxInInPort = 32'b0;
     wire [31:0] C_sign_extended = 32'b0;
@@ -81,26 +84,27 @@ module DATAPATH (
     Register R13(clear, clock, R13in, BusMuxOut, BusMuxInR13);
     Register R14(clear, clock, R14in, BusMuxOut, BusMuxInR14);
     Register R15(clear, clock, R15in, BusMuxOut, BusMuxInR15);
-    // HI/LO (mul/div results later come via ZHI/ZLO onto bus)
+
+    // HI/LO
     Register HI (clear, clock, HIin, BusMuxOut, BusMuxInHI);
     Register LO (clear, clock, LOin, BusMuxOut, BusMuxInLO);
-    // IR (loads instruction word from bus)
+
+    // IR
     Register IRreg (clear, clock, IRin, BusMuxOut, IR);
-    // Y temporary register (stores first ALU operand A)
+
+    // Y
     Register Yreg (clear, clock, Yin, BusMuxOut, BusMuxInY);
-    // MAR (loads address from bus)
+
+    // MAR
     Register MAR (clear, clock, MARin, BusMuxOut, BusMuxInMAR);
-    // PC with internal incrementer (no ALU needed for IncPC)
+
+    // PC
     PC PCreg (clear, clock, PCin, IncPC, BusMuxOut, BusMuxInPC);
 
-    
-    // internal wire name used in datapath
-    // MDR mux selects Mdatain when Read=1, else bus
-    // MDR has two input sources (memory or bus).
-    MDR mdr (clear, clock,MDRin, Read, BusMuxOut, Mdatain, BusMuxInMDR);
+    // MDR
+    MDR mdr (clear, clock, MDRin, Read, BusMuxOut, Mdatain, BusMuxInMDR);
 
-    // select opcode to use based on control signal (later phases ctl signal comes from IR decode)
-    // for now test bench drives ADD = 1 or SUB = 1, etc. same functionality as 32 to 5 encoder
+    // opcode select
     reg [4:0] alu_opcode;
     always @(*) begin
         alu_opcode = 5'b00000; // default ADD
@@ -123,29 +127,36 @@ module DATAPATH (
     // ALU outputs (go into Z)
     wire [31:0] alu_ZLo, alu_ZHi;
 
+    // NEW: div-by-zero flag from ALU
+    wire div_by_zero_internal;
+
     ALU alu (
         .opcode(alu_opcode),
-        .A(BusMuxInY),     // A operand comes from Y register (stored earlier)
-        .B(BusMuxOut),     // B operand is whatever is currently on the bus
+        .A(BusMuxInY),     // A operand comes from Y register
+        .B(BusMuxOut),     // B operand is on the bus
         .ZLO(alu_ZLo),
-        .ZHI(alu_ZHi)
+        .ZHI(alu_ZHi),
+        .div_by_zero(div_by_zero_internal)   // NEW
     );
 
-    // Z register store 64 bit ALU result (needed for mul/div, only LO 32 bits needed for all other ops)
+    // NEW: expose it at datapath level
+    assign div_by_zero_flag = div_by_zero_internal;
+
+    // Z register store 64 bit ALU result
     ZREG Z (
         .clear(clear),
         .clock(clock),
         .Zenable(Zin),
-        .Zinput({alu_ZHi, alu_ZLo}), // concatanates the hi 32 bits and LO 32 bits since Zin is 64 bits
+        .Zinput({alu_ZHi, alu_ZLo}),
         .ZHI(BusMuxInZHI),
         .ZLO(BusMuxInZLO)
     );
 
-    // expose Zhi/Zlo for convenience
+    // expose Zhi/Zlo
     assign Zhi = BusMuxInZHI;
     assign Zlo = BusMuxInZLO;
 
-    // bus selects one source onto BusMuxOut based on out control signals
+    // bus
     BUS bus (
         .BusMuxInR0(BusMuxInR0),   .BusMuxInR1(BusMuxInR1),   .BusMuxInR2(BusMuxInR2),   .BusMuxInR3(BusMuxInR3),
         .BusMuxInR4(BusMuxInR4),   .BusMuxInR5(BusMuxInR5),   .BusMuxInR6(BusMuxInR6),   .BusMuxInR7(BusMuxInR7),
