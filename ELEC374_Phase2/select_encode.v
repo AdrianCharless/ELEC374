@@ -9,7 +9,6 @@ module select_encode (
 	input Rin, 
 	input Rout, 
 	input BAout, 
-	input Cout, 
 	
 	output [15:0] Rin_out,
 	output [15:0] Rout_out	
@@ -25,6 +24,7 @@ module select_encode (
                            4'b0000;   // default to 0 if none asserted
 									 
 	wire [15:0] decoder_out;
+
 
 	assign decoder_out = (reg_select == 4'd0)  ? 16'b1000000000000000 :
                      (reg_select == 4'd1)  ? 16'b0100000000000000 :
@@ -43,7 +43,6 @@ module select_encode (
                      (reg_select == 4'd14) ? 16'b0000000000000010 :
                      (reg_select == 4'd15) ? 16'b0000000000000001 :
                      16'b0000000000000000;
-
 								 
 	assign Rin_out  = decoder_out & {16{Rin}};
    assign Rout_out = decoder_out & {16{Rout | BAout}};
