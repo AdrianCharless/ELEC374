@@ -192,20 +192,4 @@ module select_encode_tb;
     end
 
 endmodule
-```
 
----
-
-**What changed — the bit ordering:**
-```
-Old (LSB = R0):   R2 → 0000000000000100
-New (MSB = R0):   R2 → 0010000000000000
-```
-
-The mapping is now:
-```
-Rin_out[15] = R0in
-Rin_out[14] = R1in
-Rin_out[13] = R2in
-...
-Rin_out[0]  = R15in
