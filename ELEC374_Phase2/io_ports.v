@@ -1,26 +1,23 @@
 // io_ports.v
+// In.Port drives the bus when selected
+// Out.Port latches bus data on clock edge when enabled
 
 module io_ports(
 
-    input clk,
-
-    input [31:0] Bus,
-    input [31:0] InPortData,
-
-    input InPortout,
-    input OutPortin,
+    input         clk,
+    input  [31:0] Bus,
+    input  [31:0] InPortData,
+    input         InPortout,
+    input         OutPortin,
 
     output [31:0] BusOut,
     output reg [31:0] OutPortData
 
 );
 
-assign BusOut =
-        InPortout ? InPortData :
-        32'hz;
+assign BusOut = InPortout ? InPortData : 32'hz;
 
-always @(posedge clk)
-begin
+always @(posedge clk) begin
     if (OutPortin)
         OutPortData <= Bus;
 end
