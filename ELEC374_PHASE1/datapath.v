@@ -38,6 +38,8 @@ module DATAPATH (
     input clock,
     input clear,
 
+    input CONin, 
+
     // not used in phase 1
     output [31:0] IR,
     output [31:0] Outport,
@@ -66,6 +68,8 @@ module DATAPATH (
     // not used in phase 1
     wire [31:0] BusMuxInInPort = 32'b0;
     wire [31:0] C_sign_extended = 32'b0;
+
+    wire condition_result;
 
     // instantiate registers R0-R15 (each loads from BusMuxOut)
     Register R0 (clear, clock, R0in, BusMuxOut, BusMuxInR0);
@@ -181,5 +185,20 @@ module DATAPATH (
 
         .BusMuxOut(BusMuxOut)
     );
+    
+    branch_condition BC (
+        .Bus(BusMuxOut),
+        .C2(IR[20:19]),
+        .condition_result(condition_result)
+    );
+
+    reg CON;
+
+    always @(posedge clock or posedge clear) begin
+        if (clear)
+            CON <= 1'b0;
+        else if (CONin)
+            CON <= condition_result;
+    end
 
 endmodule
