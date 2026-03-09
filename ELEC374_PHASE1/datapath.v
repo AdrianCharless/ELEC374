@@ -1,8 +1,5 @@
-// datapath wo select/encode logic, CON FF, memory chip, I/O
-// phase 1 uses simulated control signals
-
 module DATAPATH (
-    // bus select signals from control unit (select/encode) (simulated in phase 1)
+    // bus output select signals
     input R0out,  input R1out,  input R2out,  input R3out,
     input R4out,  input R5out,  input R6out,  input R7out,
     input R8out,  input R9out,  input R10out, input R11out,
@@ -10,10 +7,10 @@ module DATAPATH (
     input HIout, input LOout,
     input ZHIout, input ZLOout,
     input PCout, input MDRout,
-    input InPortout,  // not used in Phase 1, but BUS.v has it
-    input Cout,       // not used in Phase 1, but BUS.v has it
+    input InPortout,
+    input Cout,
 
-    // register load enable signals from control unit (select/encode) (simulated in phase 1)
+    // register input/load signals
     input R0in,  input R1in,  input R2in,  input R3in,
     input R4in,  input R5in,  input R6in,  input R7in,
     input R8in,  input R9in,  input R10in, input R11in,
@@ -22,94 +19,127 @@ module DATAPATH (
     input PCin, input IRin, input Yin, input Zin,
     input MARin, input MDRin,
 
-    // ALU ops from control unit (simulated in phase 1)
+    // ALU control
     input ADD, input SUB, input AND, input OR,
     input SHR, input SHRA, input SHL, input ROR, input ROL,
     input MUL, input DIV, input NEG, input NOT,
 
-    // increment PC signal from control unit (simulated in phase 1)
+    // PC control
     input IncPC,
 
-    // memory/MDR
+    // memory control
     input Read,
-    input [31:0] Mdatain,
+    input Write,
 
-    // clock and clear
+    // global signals
     input clock,
     input clear,
 
-    input CONin, 
-
-    // not used in phase 1
+    // outputs
     output [31:0] IR,
     output [31:0] Outport,
 
-    // for phase 1 debugging (can remove later)
+    // debug outputs
     output [31:0] BusMuxOut,
     output [31:0] Zhi,
-    output [31:0] Zlo,
-
-    // NEW: expose divide-by-zero flag to top level
-    output        div_by_zero_flag
+    output [31:0] Zlo
 );
 
-    // internal wires connecting components to bus
-    wire [31:0] BusMuxInR0,  BusMuxInR1,  BusMuxInR2,  BusMuxInR3;
-    wire [31:0] BusMuxInR4,  BusMuxInR5,  BusMuxInR6,  BusMuxInR7;
-    wire [31:0] BusMuxInR8,  BusMuxInR9,  BusMuxInR10, BusMuxInR11;
-    wire [31:0] BusMuxInR12, BusMuxInR13, BusMuxInR14, BusMuxInR15;
-    wire [31:0] BusMuxInHI, BusMuxInLO;
+    // =========================
+    // Internal bus input wires
+    // =========================
+    wire [31:0] BusMuxInR0;
+    wire [31:0] BusMuxInR1;
+    wire [31:0] BusMuxInR2;
+    wire [31:0] BusMuxInR3;
+    wire [31:0] BusMuxInR4;
+    wire [31:0] BusMuxInR5;
+    wire [31:0] BusMuxInR6;
+    wire [31:0] BusMuxInR7;
+    wire [31:0] BusMuxInR8;
+    wire [31:0] BusMuxInR9;
+    wire [31:0] BusMuxInR10;
+    wire [31:0] BusMuxInR11;
+    wire [31:0] BusMuxInR12;
+    wire [31:0] BusMuxInR13;
+    wire [31:0] BusMuxInR14;
+    wire [31:0] BusMuxInR15;
+
+    wire [31:0] BusMuxInHI;
+    wire [31:0] BusMuxInLO;
     wire [31:0] BusMuxInPC;
-    wire [31:0] BusMuxInMDR;
-    wire [31:0] BusMuxInMAR;
     wire [31:0] BusMuxInY;
-    wire [31:0] BusMuxInZHI, BusMuxInZLO;
+    wire [31:0] BusMuxInZHI;
+    wire [31:0] BusMuxInZLO;
+    wire [31:0] BusMuxInMDR;
 
-    // not used in phase 1
-    wire [31:0] BusMuxInInPort = 32'b0;
-    wire [31:0] C_sign_extended = 32'b0;
+    // not used yet / placeholders
+    wire [31:0] BusMuxInInPort;
+    wire [31:0] C_sign_extended;
 
-    wire condition_result;
+    assign BusMuxInInPort = 32'b0;
+    assign C_sign_extended = 32'b0;
 
-    // instantiate registers R0-R15 (each loads from BusMuxOut)
-    Register R0 (clear, clock, R0in, BusMuxOut, BusMuxInR0);
-    Register R1 (clear, clock, R1in, BusMuxOut, BusMuxInR1);
-    Register R2 (clear, clock, R2in, BusMuxOut, BusMuxInR2);
-    Register R3 (clear, clock, R3in, BusMuxOut, BusMuxInR3);
-    Register R4 (clear, clock, R4in, BusMuxOut, BusMuxInR4);
-    Register R5 (clear, clock, R5in, BusMuxOut, BusMuxInR5);
-    Register R6 (clear, clock, R6in, BusMuxOut, BusMuxInR6);
-    Register R7 (clear, clock, R7in, BusMuxOut, BusMuxInR7);
-    Register R8 (clear, clock, R8in, BusMuxOut, BusMuxInR8);
-    Register R9 (clear, clock, R9in, BusMuxOut, BusMuxInR9);
-    Register R10(clear, clock, R10in, BusMuxOut, BusMuxInR10);
-    Register R11(clear, clock, R11in, BusMuxOut, BusMuxInR11);
-    Register R12(clear, clock, R12in, BusMuxOut, BusMuxInR12);
-    Register R13(clear, clock, R13in, BusMuxOut, BusMuxInR13);
-    Register R14(clear, clock, R14in, BusMuxOut, BusMuxInR14);
-    Register R15(clear, clock, R15in, BusMuxOut, BusMuxInR15);
+    // memory debug wires
+    wire [31:0] MAR_Q_unused;
+    wire [31:0] RAM_rdata_unused;
 
-    // HI/LO
-    Register HI (clear, clock, HIin, BusMuxOut, BusMuxInHI);
-    Register LO (clear, clock, LOin, BusMuxOut, BusMuxInLO);
+    // =========================
+    // General purpose registers
+    // =========================
+    Register R0  (clear, clock, R0in,  BusMuxOut, BusMuxInR0);
+    Register R1  (clear, clock, R1in,  BusMuxOut, BusMuxInR1);
+    Register R2  (clear, clock, R2in,  BusMuxOut, BusMuxInR2);
+    Register R3  (clear, clock, R3in,  BusMuxOut, BusMuxInR3);
+    Register R4  (clear, clock, R4in,  BusMuxOut, BusMuxInR4);
+    Register R5  (clear, clock, R5in,  BusMuxOut, BusMuxInR5);
+    Register R6  (clear, clock, R6in,  BusMuxOut, BusMuxInR6);
+    Register R7  (clear, clock, R7in,  BusMuxOut, BusMuxInR7);
+    Register R8  (clear, clock, R8in,  BusMuxOut, BusMuxInR8);
+    Register R9  (clear, clock, R9in,  BusMuxOut, BusMuxInR9);
+    Register R10 (clear, clock, R10in, BusMuxOut, BusMuxInR10);
+    Register R11 (clear, clock, R11in, BusMuxOut, BusMuxInR11);
+    Register R12 (clear, clock, R12in, BusMuxOut, BusMuxInR12);
+    Register R13 (clear, clock, R13in, BusMuxOut, BusMuxInR13);
+    Register R14 (clear, clock, R14in, BusMuxOut, BusMuxInR14);
+    Register R15 (clear, clock, R15in, BusMuxOut, BusMuxInR15);
 
-    // IR
+    // =========================
+    // Special registers
+    // =========================
+    Register HIreg (clear, clock, HIin, BusMuxOut, BusMuxInHI);
+    Register LOreg (clear, clock, LOin, BusMuxOut, BusMuxInLO);
     Register IRreg (clear, clock, IRin, BusMuxOut, IR);
-
-    // Y
-    Register Yreg (clear, clock, Yin, BusMuxOut, BusMuxInY);
-
-    // MAR
-    Register MAR (clear, clock, MARin, BusMuxOut, BusMuxInMAR);
+    Register Yreg  (clear, clock, Yin,  BusMuxOut, BusMuxInY);
 
     // PC
     PC PCreg (clear, clock, PCin, IncPC, BusMuxOut, BusMuxInPC);
 
-    // MDR
-    MDR mdr (clear, clock, MDRin, Read, BusMuxOut, Mdatain, BusMuxInMDR);
+    // =========================
+    // Memory subsystem
+    // Contains:
+    //   - MAR
+    //   - MDR
+    //   - RAM
+    // =========================
+    Memory mem (
+        .clock(clock),
+        .clear(clear),
+        .MARin(MARin),
+        .MDRin(MDRin),
+        .Read(Read),
+        .Write(Write),
+        .BusMuxOut(BusMuxOut),
+        .BusMuxInMDR(BusMuxInMDR),
+        .MAR_Q(MAR_Q_unused),
+        .RAM_rdata(RAM_rdata_unused)
+    );
 
-    // opcode select
+    // =========================
+    // ALU control selection
+    // =========================
     reg [4:0] alu_opcode;
+
     always @(*) begin
         alu_opcode = 5'b00000; // default ADD
 
@@ -128,25 +158,23 @@ module DATAPATH (
         else if (NOT)  alu_opcode = 5'b01111;
     end
 
-    // ALU outputs (go into Z)
-    wire [31:0] alu_ZLo, alu_ZHi;
-
-    // NEW: div-by-zero flag from ALU
-    wire div_by_zero_internal;
+    // =========================
+    // ALU
+    // =========================
+    wire [31:0] alu_ZLo;
+    wire [31:0] alu_ZHi;
 
     ALU alu (
         .opcode(alu_opcode),
-        .A(BusMuxInY),     // A operand comes from Y register
-        .B(BusMuxOut),     // B operand is on the bus
+        .A(BusMuxInY),
+        .B(BusMuxOut),
         .ZLO(alu_ZLo),
-        .ZHI(alu_ZHi),
-        .div_by_zero(div_by_zero_internal)   // NEW
+        .ZHI(alu_ZHi)
     );
 
-    // NEW: expose it at datapath level
-    assign div_by_zero_flag = div_by_zero_internal;
-
-    // Z register store 64 bit ALU result
+    // =========================
+    // Z register
+    // =========================
     ZREG Z (
         .clear(clear),
         .clock(clock),
@@ -156,49 +184,75 @@ module DATAPATH (
         .ZLO(BusMuxInZLO)
     );
 
-    // expose Zhi/Zlo
     assign Zhi = BusMuxInZHI;
     assign Zlo = BusMuxInZLO;
 
-    // bus
+    // =========================
+    // Output port placeholder
+    // =========================
+    assign Outport = 32'b0;
+
+    // =========================
+    // Bus
+    // =========================
     BUS bus (
-        .BusMuxInR0(BusMuxInR0),   .BusMuxInR1(BusMuxInR1),   .BusMuxInR2(BusMuxInR2),   .BusMuxInR3(BusMuxInR3),
-        .BusMuxInR4(BusMuxInR4),   .BusMuxInR5(BusMuxInR5),   .BusMuxInR6(BusMuxInR6),   .BusMuxInR7(BusMuxInR7),
-        .BusMuxInR8(BusMuxInR8),   .BusMuxInR9(BusMuxInR9),   .BusMuxInR10(BusMuxInR10), .BusMuxInR11(BusMuxInR11),
-        .BusMuxInR12(BusMuxInR12), .BusMuxInR13(BusMuxInR13), .BusMuxInR14(BusMuxInR14), .BusMuxInR15(BusMuxInR15),
-        .BusMuxInHI(BusMuxInHI), .BusMuxInLO(BusMuxInLO),
-        .BusMuxInZHI(BusMuxInZHI), .BusMuxInZLO(BusMuxInZLO),
+        .BusMuxInR0(BusMuxInR0),
+        .BusMuxInR1(BusMuxInR1),
+        .BusMuxInR2(BusMuxInR2),
+        .BusMuxInR3(BusMuxInR3),
+        .BusMuxInR4(BusMuxInR4),
+        .BusMuxInR5(BusMuxInR5),
+        .BusMuxInR6(BusMuxInR6),
+        .BusMuxInR7(BusMuxInR7),
+        .BusMuxInR8(BusMuxInR8),
+        .BusMuxInR9(BusMuxInR9),
+        .BusMuxInR10(BusMuxInR10),
+        .BusMuxInR11(BusMuxInR11),
+        .BusMuxInR12(BusMuxInR12),
+        .BusMuxInR13(BusMuxInR13),
+        .BusMuxInR14(BusMuxInR14),
+        .BusMuxInR15(BusMuxInR15),
+
+        .BusMuxInHI(BusMuxInHI),
+        .BusMuxInLO(BusMuxInLO),
+
+        .BusMuxInZHI(BusMuxInZHI),
+        .BusMuxInZLO(BusMuxInZLO),
+
         .BusMuxInPC(BusMuxInPC),
         .BusMuxInMDR(BusMuxInMDR),
         .BusMuxInInPort(BusMuxInInPort),
         .C_sign_extended(C_sign_extended),
 
-        .R0out(R0out), .R1out(R1out), .R2out(R2out), .R3out(R3out),
-        .R4out(R4out), .R5out(R5out), .R6out(R6out), .R7out(R7out),
-        .R8out(R8out), .R9out(R9out), .R10out(R10out), .R11out(R11out),
-        .R12out(R12out), .R13out(R13out), .R14out(R14out), .R15out(R15out),
-        .HIout(HIout), .LOout(LOout),
-        .ZHIout(ZHIout), .ZLOout(ZLOout),
-        .PCout(PCout), .MDRout(MDRout),
+        .R0out(R0out),
+        .R1out(R1out),
+        .R2out(R2out),
+        .R3out(R3out),
+        .R4out(R4out),
+        .R5out(R5out),
+        .R6out(R6out),
+        .R7out(R7out),
+        .R8out(R8out),
+        .R9out(R9out),
+        .R10out(R10out),
+        .R11out(R11out),
+        .R12out(R12out),
+        .R13out(R13out),
+        .R14out(R14out),
+        .R15out(R15out),
+
+        .HIout(HIout),
+        .LOout(LOout),
+
+        .ZHIout(ZHIout),
+        .ZLOout(ZLOout),
+
+        .PCout(PCout),
+        .MDRout(MDRout),
         .InPortout(InPortout),
         .Cout(Cout),
 
         .BusMuxOut(BusMuxOut)
     );
-    
-    branch_condition BC (
-        .Bus(BusMuxOut),
-        .C2(IR[20:19]),
-        .condition_result(condition_result)
-    );
-
-    reg CON;
-
-    always @(posedge clock or posedge clear) begin
-        if (clear)
-            CON <= 1'b0;
-        else if (CONin)
-            CON <= condition_result;
-    end
 
 endmodule
