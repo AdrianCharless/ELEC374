@@ -38,7 +38,7 @@ wire [15:0] Rin_decoded;
 wire [15:0] Rout_decoded;
 
 select_encode SE(
-    .IR(IR_out),
+    .IR(BusMuxIn_IR),
     .Gra(Gra),
     .Grb(Grb),
     .Grc(Grc),
@@ -52,7 +52,7 @@ select_encode SE(
 wire [31:0] C_sign_extended;
 
 sign_extend SE_C(
-    .C_in(IR_out[18:0]),
+    .C_in(BusMuxIn_IR[18:0]),
     .C_sign_extended(C_sign_extended)
 );
 
@@ -184,7 +184,7 @@ con_ff CONFF(
     clock,
     CONin,
     BusMuxOut,
-    IR_out[22:19],
+    BusMuxIn_IR[22:19],
     CON
 );
 

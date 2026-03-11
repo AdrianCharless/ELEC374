@@ -27,7 +27,8 @@ module Memory (
     // load memory
     reg [31:0] mem [0:511];
     initial begin
-        $readmemh("../memory_init.hex", mem);
+        //$readmemh("../memory_init.hex", mem);
+        // USE THIS IN PHASE 3 ONWARDS
     end
 
     // MAR register (loads address from bus)
