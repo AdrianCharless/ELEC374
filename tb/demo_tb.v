@@ -215,7 +215,7 @@ module brzr_tb;
                 $display("Final R3  = %h", DUT.BusMuxIn_R3);
                 $display("Final CON = %b", DUT.CON);
                 $display("Expected for taken brzr with PC=0, offset=48: PC should go 0 -> 1 -> 49 (0x31)");
-                #20 $stop;
+                #20 $finish;
             end
         endcase
     end
