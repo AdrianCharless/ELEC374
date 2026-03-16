@@ -137,7 +137,7 @@ module ALU(
     );
 
     // Negate (2's complement)
-    NEG32 neg_inst (
+    NEG neg_inst (
         .A(B),
         .Result(neg_result)
     );
