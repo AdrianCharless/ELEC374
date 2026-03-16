@@ -1,4 +1,4 @@
-module DIV (
+module DIV32 (
     input  [31:0] A,              // dividend (signed 2's complement)
     input  [31:0] B,              // divisor  (signed 2's complement)
     output [31:0] quotient,
