@@ -5,7 +5,7 @@ module Encoder32to5(
 	input R8out, R9out, R10out, R11out, R12out, R13out, R14out, R15out,
 	input HIout, LOout, Zhighout, Zlowout,
 	input PCout, MDRout, InPortout, Cout,
-	output [4:0] S
+	output reg [4:0] S
 );
 
 wire [23:0] ControlSignals = {
