@@ -1,4 +1,4 @@
-// OR.v
+// OR32.v
 // 32-bit logical OR unit for MiniSRC Phase 1
 
 module OR (
