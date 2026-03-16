@@ -11,9 +11,9 @@ module con_ff(
 
     // instantiate the combinational condition logic
     branch_condition BC (
-        .value(BusMuxOut),
-        .condition(IR_C2[1:0]),
-        .result(condition_result)
+        .Bus(BusMuxOut),
+        .C2(IR_C2[1:0]),
+        .condition_result(condition_result)
     );
 
     // the actual CON flip-flop

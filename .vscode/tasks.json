@@ -4,7 +4,7 @@
     {
       "label": "Run Verilog Simulation (Phase 1)",
       "type": "shell",
-      "command": "iverilog -g2012 -o simulation_bin.out ELEC374_PHASE1/datapath.v ELEC374_PHASE1/registers/*.v ELEC374_PHASE1/memory/*.v ELEC374_PHASE1/bus/BUS.v ELEC374_PHASE1/alu/*.v ELEC374_PHASE1/tb/datapath_tb.v ELEC374_PHASE2/branch_condition.v && vvp simulation_bin.out && gtkwave waveforms.vcd ",
+      "command": "iverilog -g2012 -o simulation_bin.out datapath.v registers/*.v memory/*.v bus/BUS.v alu/*.v tb/demo_tb.v control/*.v datapath_helpers/*.v && vvp simulation_bin.out && gtkwave waveforms.vcd ",
       "options": {
         "cwd": "${workspaceFolder}/"
       },

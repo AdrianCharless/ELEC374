@@ -39,20 +39,18 @@ wire [15:0] Rout_decoded;
 
 select_encode SE(
     .IR(BusMuxIn_IR),
-    .Gra(Gra),
-    .Grb(Grb),
-    .Grc(Grc),
-    .Rin(Rin),
-    .Rout(Rout),
-    .Rin_decoded(Rin_decoded),
-    .Rout_decoded(Rout_decoded)
+    .Gra(Gra), .Grb(Grb), .Grc(Grc),
+    .Rin(Rin), .Rout(Rout),
+    .BAout(BAout),              // was missing
+    .Rin_out(Rin_decoded),      // renamed from Rin_decoded
+    .Rout_out(Rout_decoded)     // renamed from Rout_decoded
 );
 
 // SIGN EXTEND
 wire [31:0] C_sign_extended;
 
 sign_extend SE_C(
-    .C_in(BusMuxIn_IR[18:0]),
+    .C(BusMuxIn_IR[18:0]),              
     .C_sign_extended(C_sign_extended)
 );
 
@@ -108,72 +106,84 @@ wire [31:0] BusMuxIn_Y;
 wire [31:0] BusMuxIn_HI;
 wire [31:0] BusMuxIn_LO;
 
-Register PC(clear,clock,PCin,BusMuxOut,BusMuxIn_PC);
+Register PC(clear, clock, PCin & (CON | ~branch_active), BusMuxOut, BusMuxIn_PC);
 Register IR(clear,clock,IRin,BusMuxOut,BusMuxIn_IR);
 Register Y (clear,clock,Yin ,BusMuxOut,BusMuxIn_Y);
 Register HI(clear,clock,HIin,BusMuxOut,BusMuxIn_HI);
 Register LO(clear,clock,LOin,BusMuxOut,BusMuxIn_LO);
 
 // ALU
-wire [63:0] ALU_result;
+wire [4:0] ALU_opcode;
+assign ALU_opcode = ADD  ? 5'b00000 :
+                    SUB  ? 5'b00001 :
+                    AND  ? 5'b00010 :
+                    OR   ? 5'b00011 :
+                    SHR  ? 5'b00100 :
+                    SHRA ? 5'b00101 :
+                    SHL  ? 5'b00110 :
+                    ROR  ? 5'b00111 :
+                    ROL  ? 5'b01000 :
+                    DIV  ? 5'b01100 :
+                    MUL  ? 5'b01101 :
+                    NEG  ? 5'b01110 :
+                    NOT  ? 5'b01111 :
+                    5'b00000;
 
-alu ALU(
+// ALU outputs (separate ZLO / ZHI, no 64-bit bundle)
+wire [31:0] ALU_ZLO, ALU_ZHI;
+wire        ALU_div_by_zero;
+
+ALU ALU_inst(               // <-- module name is ALU, instance name ALU_inst
+    .opcode(ALU_opcode),
     .A(BusMuxIn_Y),
     .B(BusMuxOut),
-    .ADD(ADD),
-    .SUB(SUB),
-    .AND(AND),
-    .OR(OR),
-    .NEG(NEG),
-    .NOT(NOT),
-    .SHR(SHR),
-    .SHRA(SHRA),
-    .SHL(SHL),
-    .ROR(ROR),
-    .ROL(ROL),
-    .MUL(MUL),
-    .DIV(DIV),
-    .C(ALU_result)
+    .ZLO(ALU_ZLO),
+    .ZHI(ALU_ZHI),
+    .div_by_zero(ALU_div_by_zero)
 );
 
-// Z REGISTER
-wire [63:0] Zout;
-ZReg ZREG(
-    clear,
-    clock,
-    Zin,
-    ALU_result,
-    Zout
-);
+// Z REGISTER - takes two 32-bit halves, outputs two 32-bit halves
+wire [31:0] BusMuxIn_Zlow, BusMuxIn_Zhigh;
 
-wire [31:0] BusMuxIn_Zlow  = Zout[31:0];
-wire [31:0] BusMuxIn_Zhigh = Zout[63:32];
+ZREG ZREG_inst(             // <-- module name is ZREG
+    .clear(clear),
+    .clock(clock),
+    .Zenable(Zin),
+    .Zinput({ALU_ZHI, ALU_ZLO}),   // pack into 64-bit input
+    .ZHI(BusMuxIn_Zhigh),
+    .ZLO(BusMuxIn_Zlow)
+);
 
 // MEMORY
 wire [31:0] BusMuxIn_MDR;
+wire [31:0] MAR_Q_unused;
+wire [31:0] RAM_rdata_unused;
 
 Memory MEM(
-    clear,
-    clock,
-    MARin,
-    MDRin,
-    Read,
-    Write,
-    BusMuxOut,
-    BusMuxIn_MDR
+    .clock(clock),
+    .clear(clear),
+    .MARin(MARin),
+    .MDRin(MDRin),
+    .Read(Read),
+    .Write(Write),
+    .BusMuxOut(BusMuxOut),
+    .BusMuxInMDR(BusMuxIn_MDR),
+    .MAR_Q(MAR_Q_unused),
+    .RAM_rdata(RAM_rdata_unused)
 );
 
-// IO PORTS
-wire [31:0] BusMuxIn_InPort;
+wire [31:0] BusMuxIn_InPort;   // ensure this is 32-bit, declared before io_ports
+
+wire [31:0] OutPortData;       // also needs to be declared
 
 io_ports IO(
-    clear,
-    clock,
-    OutPortin,
-    BusMuxOut,
-    ExternalIn,
-    BusMuxIn_InPort,
-    OutPortData
+    .clk(clock),
+    .Bus(BusMuxOut),
+    .InPortData(ExternalIn),
+    .InPortout(InPortout),
+    .OutPortin(OutPortin),
+    .BusOut(BusMuxIn_InPort),
+    .OutPortData(OutPortData)
 );
 
 // CON FF
@@ -190,43 +200,34 @@ con_ff CONFF(
 
 // BUS
 BUS BUSMUX(
-    Rout_decoded,
-    HIout,
-    LOout,
-    Zhighout,
-    Zlowout,
-    PCout,
-    MDRout,
-    InPortout,
-    Cout,
-
-    BusMuxIn_R0,
-    BusMuxIn_R1,
-    BusMuxIn_R2,
-    BusMuxIn_R3,
-    BusMuxIn_R4,
-    BusMuxIn_R5,
-    BusMuxIn_R6,
-    BusMuxIn_R7,
-    BusMuxIn_R8,
-    BusMuxIn_R9,
-    BusMuxIn_R10,
-    BusMuxIn_R11,
-    BusMuxIn_R12,
-    BusMuxIn_R13,
-    BusMuxIn_R14,
-    BusMuxIn_R15,
-
-    BusMuxIn_HI,
-    BusMuxIn_LO,
-    BusMuxIn_Zhigh,
-    BusMuxIn_Zlow,
-    BusMuxIn_PC,
-    BusMuxIn_MDR,
-    BusMuxIn_InPort,
-    C_sign_extended,
-
-    BusMuxOut
+    // data inputs
+    .BusMuxInR0(BusMuxIn_R0),   .BusMuxInR1(BusMuxIn_R1),
+    .BusMuxInR2(BusMuxIn_R2),   .BusMuxInR3(BusMuxIn_R3),
+    .BusMuxInR4(BusMuxIn_R4),   .BusMuxInR5(BusMuxIn_R5),
+    .BusMuxInR6(BusMuxIn_R6),   .BusMuxInR7(BusMuxIn_R7),
+    .BusMuxInR8(BusMuxIn_R8),   .BusMuxInR9(BusMuxIn_R9),
+    .BusMuxInR10(BusMuxIn_R10), .BusMuxInR11(BusMuxIn_R11),
+    .BusMuxInR12(BusMuxIn_R12), .BusMuxInR13(BusMuxIn_R13),
+    .BusMuxInR14(BusMuxIn_R14), .BusMuxInR15(BusMuxIn_R15),
+    .BusMuxInHI(BusMuxIn_HI),   .BusMuxInLO(BusMuxIn_LO),
+    .BusMuxInZHI(BusMuxIn_Zhigh), .BusMuxInZLO(BusMuxIn_Zlow),
+    .BusMuxInPC(BusMuxIn_PC),   .BusMuxInMDR(BusMuxIn_MDR),
+    .BusMuxInInPort(BusMuxIn_InPort),
+    .C_sign_extended(C_sign_extended),
+    // select signals
+    .R0out(Rout_decoded[0]),   .R1out(Rout_decoded[1]),
+    .R2out(Rout_decoded[2]),   .R3out(Rout_decoded[3]),
+    .R4out(Rout_decoded[4]),   .R5out(Rout_decoded[5]),
+    .R6out(Rout_decoded[6]),   .R7out(Rout_decoded[7]),
+    .R8out(Rout_decoded[8]),   .R9out(Rout_decoded[9]),
+    .R10out(Rout_decoded[10]), .R11out(Rout_decoded[11]),
+    .R12out(Rout_decoded[12]), .R13out(Rout_decoded[13]),
+    .R14out(Rout_decoded[14]), .R15out(Rout_decoded[15]),
+    .HIout(HIout),   .LOout(LOout),
+    .ZHIout(Zhighout), .ZLOout(Zlowout),
+    .PCout(PCout),   .MDRout(MDRout),
+    .InPortout(InPortout), .Cout(Cout),
+    .BusMuxOut(BusMuxOut)
 );
 
 endmodule

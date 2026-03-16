@@ -34,7 +34,7 @@ module ALU(
     // Wires for each operation's output
     // ========================================================================
     wire [31:0] add_result;
-    wire [4:0] add_cout;
+    wire add_cout;
     wire [31:0] sub_result;
     wire [31:0] and_result;
     wire [31:0] or_result;

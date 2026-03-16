@@ -8,7 +8,7 @@ module ROL (
     assign shift_amt = count[4:0];
     // Use low 5 bits (mod 32) - no point shifting by 33 (same as 1)
 
-    assign Result = (shift_amt == 5'd0) ? A : ((A << shift_amt) | (A >> (5'd32 - shift_amt)));
+    assign Result = (shift_amt == 5'd0) ? A : ((A << shift_amt) | (A >> (32 - shift_amt)));
     // Rotate left: (A << shamt) OR (A >> (32 - shamt))
     // Edge case: if shift amt = 0, output = input to avoid shifting by 32 (undefined in verilog)
     
