@@ -71,14 +71,14 @@ module ALU(
     );
 
     // Logical AND
-    AND and_inst (
+    AND32 and_inst (
         .A(A),
         .B(B),
         .out(and_result)
     );
 
     // Logical OR
-    OR or_inst (
+    OR32 or_inst (
         .A(A),
         .B(B),
         .out(or_result)
@@ -120,7 +120,7 @@ module ALU(
     );
 
     // Multiplication (produces 64-bit result)
-    MUL mul_inst (
+    MUL32 mul_inst (
         .A(A),
         .B(B),
         .HI(mul_hi),
@@ -128,7 +128,7 @@ module ALU(
     );
 
     // Division (combinational - produces quotient and remainder)
-    DIV div_inst (
+    DIV32 div_inst (
         .A(A),
         .B(B),
         .quotient(div_quotient),
@@ -137,13 +137,13 @@ module ALU(
     );
 
     // Negate (2's complement)
-    NEG neg_inst (
+    NEG32 neg_inst (
         .A(B),
         .Result(neg_result)
     );
 
     // NOT (1's complement)
-    NOT not_inst (
+    NOT32 not_inst (
         .A(B),
         .Result(not_result)
     );
@@ -240,3 +240,4 @@ module ALU(
     assign div_by_zero = (opcode == OP_DIV) ? div_by_zero_internal : 1'b0;
 
 endmodule
+
