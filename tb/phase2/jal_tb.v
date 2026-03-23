@@ -82,7 +82,7 @@ module jal_tb;
     end
 
     initial begin
-        $dumpfile("jal_waveforms.vcd");
+        $dumpfile("waveforms.vcd");
         $dumpvars(0, jal_tb);
     end
 
@@ -205,7 +205,7 @@ module jal_tb;
         else
             $display("  ** FAIL **");
         $display("==============================================");
-        $stop;
+        $finish;
     end
 
     initial begin
