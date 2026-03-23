@@ -25,8 +25,7 @@ module select_encode (
  
 	wire [15:0] decoder_out;
  
-	// decoder_out[N] = 1 when reg_select == N
-	// so that Rin_out[N]/Rout_out[N] enables register RN
+	
 	assign decoder_out = (reg_select == 4'd0)  ? 16'b0000000000000001 :
                         (reg_select == 4'd1)  ? 16'b0000000000000010 :
                         (reg_select == 4'd2)  ? 16'b0000000000000100 :
