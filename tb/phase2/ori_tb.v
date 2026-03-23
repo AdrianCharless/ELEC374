@@ -1,6 +1,6 @@
 `timescale 1ns/10ps
 
-module addi_tb;
+module ori_tb;
 
     reg clear, clock;
 
@@ -27,43 +27,36 @@ module addi_tb;
 
     reg [31:0] ExternalIn;
 
-    parameter  Default = 4'd0,
-               Init1a  = 4'd1,
-               Init1b  = 4'd2,
-               T0      = 4'd3,
-               T1      = 4'd4,
-               T2      = 4'd5,
-               T3      = 4'd6,
-               T4      = 4'd7,
-               T5      = 4'd8,
-               Done    = 4'd9;
+    parameter   Default = 4'd0,
+                Init1a  = 4'd1,
+                Init1b  = 4'd2,
+                T0      = 4'd3,
+                T1      = 4'd4,
+                T2      = 4'd5,
+                T3      = 4'd6,
+                T4      = 4'd7,
+                T5      = 4'd8,
+                Done    = 4'd9;
 
     reg [3:0] Present_state = Default;
 
     datapath DUT (
-        .clear(clear),
-        .clock(clock),
-
-        .Gra(Gra), .Grb(Grb), .Grc(Grc),
-        .Rin(Rin), .Rout(Rout),
-        .BAout(BAout), .Cout(Cout),
-
-        .PCout(PCout), .Zlowout(Zlowout), .Zhighout(Zhighout), .MDRout(MDRout),
-        .HIout(HIout), .LOout(LOout), .InPortout(InPortout),
-
-        .PCin(PCin), .IRin(IRin), .Yin(Yin), .Zin(Zin),
-        .HIin(HIin), .LOin(LOin), .OutPortin(OutPortin),
-
-        .MARin(MARin), .MDRin(MDRin),
-        .Read(Read), .Write(Write),
+        .clear(clear),       .clock(clock),
+        .Gra(Gra),           .Grb(Grb),         .Grc(Grc),
+        .Rin(Rin),           .Rout(Rout),
+        .BAout(BAout),       .Cout(Cout),
+        .PCout(PCout),       .Zlowout(Zlowout),  .Zhighout(Zhighout), .MDRout(MDRout),
+        .HIout(HIout),       .LOout(LOout),       .InPortout(InPortout),
+        .PCin(PCin),         .IRin(IRin),         .Yin(Yin),           .Zin(Zin),
+        .HIin(HIin),         .LOin(LOin),         .OutPortin(OutPortin),
+        .MARin(MARin),       .MDRin(MDRin),
+        .Read(Read),         .Write(Write),
         .IncPC(IncPC),
-
-        .ADD(ADD), .SUB(SUB), .AND(AND), .OR(OR),
-        .NEG(NEG), .NOT(NOT),
-        .SHR(SHR), .SHRA(SHRA), .SHL(SHL),
-        .ROR(ROR), .ROL(ROL),
-        .MUL(MUL), .DIV(DIV),
-
+        .ADD(ADD),           .SUB(SUB),           .AND(AND),           .OR(OR),
+        .NEG(NEG),           .NOT(NOT),
+        .SHR(SHR),           .SHRA(SHRA),         .SHL(SHL),
+        .ROR(ROR),           .ROL(ROL),
+        .MUL(MUL),           .DIV(DIV),
         .CONin(CONin),
         .ExternalIn(ExternalIn)
     );
@@ -74,8 +67,8 @@ module addi_tb;
     end
 
     initial begin
-        $dumpfile("waveforms.vcd");
-        $dumpvars(0, addi_tb);
+        $dumpfile("waveforms_ori.vcd");
+        $dumpvars(0, ori_tb);
     end
 
     initial begin
@@ -95,19 +88,18 @@ module addi_tb;
         clear = 1;
         ExternalIn = 32'h00000000;
 
-        // addi R7, R4, -9
-        // op=01001 Ra=0111 Rb=0100 C=-9(19bit) => 32'h4BA7FFF7
-        DUT.MEM.ram.mem[9'h000] = 32'h4BA7FFF7;
+        // ori R7, R4, 0x71 = 32'h5BA00071
+        DUT.MEM.ram.mem[9'h000] = 32'h5BA00071;
 
         #35 clear = 0;
-        // preload R4 = 25, PC = 0
-        force DUT.R4.q = 32'h00000019;
+        force DUT.R4.q = 32'h00000080;
         force DUT.PC.q = 32'h00000000;
         #9;
         release DUT.R4.q;
         release DUT.PC.q;
     end
 
+    // State sequencer
     always @(posedge clock) begin
         case (Present_state)
             Default : Present_state = Init1a;
@@ -124,82 +116,83 @@ module addi_tb;
         endcase
     end
 
+    // Control signal logic
     always @(Present_state) begin
-        Gra = 0;        Grb = 0;        Grc = 0;
-        Rin = 0;        Rout = 0;       BAout = 0;      Cout = 0;
-
-        PCout = 0;      Zlowout = 0;    Zhighout = 0;   MDRout = 0;
-        HIout = 0;      LOout = 0;      InPortout = 0;
-
-        PCin = 0;       IRin = 0;       Yin = 0;        Zin = 0;
-        HIin = 0;       LOin = 0;       OutPortin = 0;
-
-        MARin = 0;      MDRin = 0;
-        Read = 0;       Write = 0;
-        IncPC = 0;
-
-        ADD = 0;        SUB = 0;        AND = 0;        OR = 0;
-        NEG = 0;        NOT = 0;
-        SHR = 0;        SHRA = 0;       SHL = 0;
-        ROR = 0;        ROL = 0;
-        MUL = 0;        DIV = 0;
-
+        Gra = 0;    Grb = 0;    Grc = 0;
+        Rin = 0;    Rout = 0;   BAout = 0;  Cout = 0;
+        PCout = 0;  Zlowout = 0; Zhighout = 0; MDRout = 0;
+        HIout = 0;  LOout = 0;  InPortout = 0;
+        PCin = 0;   IRin = 0;   Yin = 0;    Zin = 0;
+        HIin = 0;   LOin = 0;   OutPortin = 0;
+        MARin = 0;  MDRin = 0;
+        Read = 0;   Write = 0;  IncPC = 0;
+        ADD = 0;    SUB = 0;    AND = 0;    OR = 0;
+        NEG = 0;    NOT = 0;
+        SHR = 0;    SHRA = 0;   SHL = 0;
+        ROR = 0;    ROL = 0;    MUL = 0;    DIV = 0;
         CONin = 0;
 
         case (Present_state)
-
             Init1a: begin end
             Init1b: begin end
 
+            // T0: MAR <- PC
             T0: begin
-                PCout = 1;
-                MARin = 1;
+                PCout = 1; MARin = 1;
             end
 
+            // T1: MDR <- M[MAR]
             T1: begin
-                Read  = 1;
-                MDRin = 1;
+                Read = 1; MDRin = 1;
             end
 
+            // T2: IR <- MDR
             T2: begin
-                MDRout = 1;
-                IRin   = 1;
+                MDRout = 1; IRin = 1;
             end
 
-            // R4 -> bus -> Y
+            // T3: Y <- R4  (Grb selects Rb=R4 from IR)
             T3: begin
-                Grb  = 1;
-                Rout = 1;
-                Yin  = 1;
+                Grb = 1; Rout = 1; Yin = 1;
             end
 
-            // Z <- Y + sign_ext(C)
+            // T4: Z <- Y | sign_ext(C),  C = 0x71
             T4: begin
-                Cout = 1;
-                ADD  = 1;
-                Zin  = 1;
+                Cout = 1; OR = 1; Zin = 1;
             end
 
-            // R7 <- Zlow
+            // T5: R7 <- Zlow  (Gra selects Ra=R7 from IR)
             T5: begin
-                Zlowout = 1;
-                Gra     = 1;
-                Rin     = 1;
+                Zlowout = 1; Gra = 1; Rin = 1;
             end
 
-            Done: begin
-                $display("addi R7, R4, -9 result: R7 = %h (expected 00000010)", DUT.BusMuxIn_R7);
-                #20 $finish;
-            end
+            Done: begin end
 
         endcase
     end
 
+    // Check results after T5's register write has propagated
+    initial begin
+        @(Present_state == Done);
+        #25;
+        $display("==============================================");
+        $display("TEST: ori R7, R4, 0x71");
+        $display("  R4  = %h  (expected 00000080)", DUT.BusMuxIn_R4);
+        $display("  R7  = %h  (expected 000000F1)", DUT.BusMuxIn_R7);
+        if (DUT.BusMuxIn_R7 === 32'h000000F1)
+            $display("  ** PASS **");
+        else
+            $display("  ** FAIL **");
+        $display("==============================================");
+        $stop;
+    end
+
     initial begin
         #127500;
-        $display("complete.");
+        $display("Simulation timeout.");
         $finish;
     end
 
 endmodule
+
 
