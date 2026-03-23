@@ -59,7 +59,7 @@ module out_tb;
     end
 
     initial begin
-        $dumpfile("out_waveforms.vcd");
+        $dumpfile("waveforms.vcd");
         $dumpvars(0, out_tb);
     end
 
