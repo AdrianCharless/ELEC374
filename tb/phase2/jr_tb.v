@@ -72,7 +72,7 @@ module jr_tb;
     end
 
     initial begin
-        $dumpfile("jr_waveforms.vcd");
+        $dumpfile("waveforms.vcd");
         $dumpvars(0, jr_tb);
     end
 
@@ -180,7 +180,7 @@ module jr_tb;
         else
             $display("  ** FAIL **");
         $display("==============================================");
-        $stop;
+        $finish;
     end
 
     initial begin
