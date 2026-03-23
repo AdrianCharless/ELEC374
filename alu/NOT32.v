@@ -1,4 +1,4 @@
-module NOT(
+module NOT32(
     input wire [31:0] A,
     output wire [31:0] Result
 );
