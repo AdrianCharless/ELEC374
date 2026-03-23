@@ -1,13 +1,13 @@
 `timescale 1ns/10ps
 
 // =============================================================================
-// Testbench: brnz R3, 48
-// Encoding: 32'hA9900030
-// Pre-loaded: R3=5 (nonzero -> branch taken), PC=0
+// Testbench: brpl R3, 48
+// Encoding: 32'hA9A00030
+// Pre-loaded: R3=5 (positive -> branch taken), PC=0
 // Expected: PC = 0+1+48 = 49 = 0x31
 // =============================================================================
 
-module brnz_tb;
+module brpl_tb;
 
     reg clear, clock;
 
@@ -69,8 +69,8 @@ module brnz_tb;
     end
 
     initial begin
-        $dumpfile("waveforms_brnz.vcd");
-        $dumpvars(0, brnz_tb);
+        $dumpfile("waveforms_brpl.vcd");
+        $dumpvars(0, brpl_tb);
     end
 
     initial begin
@@ -89,10 +89,10 @@ module brnz_tb;
         clear = 1;
         ExternalIn = 32'h00000000;
 
-        DUT.MEM.ram.mem[9'h000] = 32'hA9900030; // brnz R3, 48
+        DUT.MEM.ram.mem[9'h000] = 32'hA9A00030; // brpl R3, 48
 
         #35 clear = 0;
-        force DUT.R3.q = 32'h00000005;  // nonzero -> branch taken
+        force DUT.R3.q = 32'h00000005;  // positive -> branch taken
         force DUT.PC.q = 32'h00000000;
         #9;
         release DUT.R3.q;
@@ -158,7 +158,7 @@ module brnz_tb;
         @(Present_state == Done);
         #25;
         $display("==============================================");
-        $display("TEST: brnz R3, 48  (branch taken, R3=5)");
+        $display("TEST: brpl R3, 48  (branch taken, R3=5)");
         $display("  R3  = %h  (expected 00000005)", DUT.BusMuxIn_R3);
         $display("  CON = %b  (expected 1)", DUT.CON);
         $display("  PC  = %h  (expected 00000031)", DUT.BusMuxIn_PC);
