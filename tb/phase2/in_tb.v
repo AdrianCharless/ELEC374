@@ -59,7 +59,7 @@ module in_tb;
     end
 
     initial begin
-        $dumpfile("in_waveforms.vcd");
+        $dumpfile("waveforms.vcd");
         $dumpvars(0, in_tb);
     end
 
