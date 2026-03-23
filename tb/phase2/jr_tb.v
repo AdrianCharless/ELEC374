@@ -72,20 +72,26 @@ module jr_tb;
     end
 
     initial begin
-        $dumpfile("jr_waveforms.vcd");
+        $dumpfile("waveforms.vcd");
         $dumpvars(0, jr_tb);
     end
 
     initial begin
-        $monitor("time=%0t | state=%0d | PC=%h | IR=%h | R12=%h",
-                  $time, Present_state, DUT.BusMuxIn_PC, DUT.IR, DUT.BusMuxIn_R12);
+        $monitor(
+            "time=%0t | state=%0d | PC=%h | IR=%h | R12=%h",
+            $time,
+            Present_state,
+            DUT.BusMuxIn_PC,
+            DUT.IR,
+            DUT.BusMuxIn_R12
+        );
     end
 
     initial begin
         clear = 1;
         ExternalIn = 32'h00000000;
 
-        // jr R12  => opcode 10100, Ra=1100
+        // jr R12 = opcode 10100, Ra = 1100
         DUT.MEM.mem[9'h000] = 32'hA6000000;
 
         #15 clear = 0;
@@ -106,54 +112,83 @@ module jr_tb;
     end
 
     always @(Present_state) begin
-        Gra = 0; Grb = 0; Grc = 0;
-        Rin = 0; Rout = 0; BAout = 0; Cout = 0;
+        Gra = 0;        Grb = 0;        Grc = 0;
+        Rin = 0;        Rout = 0;       BAout = 0;      Cout = 0;
 
-        PCout = 0; Zlowout = 0; Zhighout = 0; MDRout = 0;
-        HIout = 0; LOout = 0; InPortout = 0;
+        PCout = 0;      Zlowout = 0;    Zhighout = 0;   MDRout = 0;
+        HIout = 0;      LOout = 0;      InPortout = 0;
 
-        PCin = 0; IRin = 0; Yin = 0; Zin = 0;
-        HIin = 0; LOin = 0; OutPortin = 0;
+        PCin = 0;       IRin = 0;       Yin = 0;        Zin = 0;
+        HIin = 0;       LOin = 0;       OutPortin = 0;
 
-        MARin = 0; MDRin = 0;
-        Read = 0; Write = 0;
+        MARin = 0;      MDRin = 0;
+        Read = 0;       Write = 0;
         IncPC = 0;
 
-        ADD = 0; SUB = 0; AND = 0; OR = 0;
-        NEG = 0; NOT = 0;
-        SHR = 0; SHRA = 0; SHL = 0;
-        ROR = 0; ROL = 0;
-        MUL = 0; DIV = 0;
+        ADD = 0;        SUB = 0;        AND = 0;        OR = 0;
+        NEG = 0;        NOT = 0;
+        SHR = 0;        SHRA = 0;       SHL = 0;
+        ROR = 0;        ROL = 0;
+        MUL = 0;        DIV = 0;
 
         CONin = 0;
 
         case (Present_state)
-            Init1a: DUT.BusMuxIn_R12 = 32'h000000FF;   // jump target
-            Init1b: DUT.BusMuxIn_PC  = 32'h00000010;
 
+            // preload R12 with jump target
+            Init1a: begin
+                DUT.BusMuxIn_R12 = 32'h00000048;
+            end
+
+            // preload PC = 0
+            Init1b: begin
+                DUT.BusMuxIn_PC = 32'h00000000;
+            end
+
+            // T0: MAR <- PC ; Z <- PC + 1
             T0: begin
-                PCout = 1; MARin = 1; IncPC = 1; Zin = 1;
+                PCout = 1;
+                MARin = 1;
+                IncPC = 1;
+                Zin   = 1;
             end
 
+            // T1: PC <- Zlow ; MDR <- M[MAR]
             T1: begin
-                Zlowout = 1; PCin = 1; Read = 1; MDRin = 1;
+                Zlowout = 1;
+                PCin    = 1;
+                Read    = 1;
+                MDRin   = 1;
             end
 
+            // T2: IR <- MDR
             T2: begin
-                MDRout = 1; IRin = 1;
+                MDRout = 1;
+                IRin   = 1;
             end
 
-            // jr: Gra, Rout, PCin
+            // T3: Gra, Rout, PCin
+            // PC <- R12
             T3: begin
-                Gra = 1; Rout = 1; PCin = 1;
+                Gra  = 1;
+                Rout = 1;
+                PCin = 1;
             end
 
             Done: begin
-                $display("Final PC  = %h", DUT.BusMuxIn_PC);
-                $display("Expected  = 000000FF");
+                $display("Final PC   = %h", DUT.BusMuxIn_PC);
+                $display("Final R12  = %h", DUT.BusMuxIn_R12);
+                $display("Expected PC = 00000048");
                 #20 $stop;
             end
         endcase
     end
 
+    initial begin
+        #127500;
+        $display("Simulation complete.");
+        $finish;
+    end
+
+endmodule
 endmodule
