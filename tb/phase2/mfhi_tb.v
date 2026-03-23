@@ -59,7 +59,7 @@ module mfhi_tb;
     end
 
     initial begin
-        $dumpfile("mfhi_waveforms.vcd");
+        $dumpfile("waveforms.vcd");
         $dumpvars(0, mfhi_tb);
     end
 
