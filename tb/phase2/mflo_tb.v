@@ -1,6 +1,6 @@
 `timescale 1ns/10ps
 
-module mflo_tb;
+module mfhi_tb;
 
     reg clear, clock;
 
@@ -59,23 +59,33 @@ module mflo_tb;
     end
 
     initial begin
-        $dumpfile("mflo_waveforms.vcd");
-        $dumpvars(0, mflo_tb);
+        $dumpfile("mfhi_waveforms.vcd");
+        $dumpvars(0, mfhi_tb);
     end
 
     initial begin
-        $monitor("time=%0t | state=%0d | PC=%h | IR=%h | LO=%h | R3=%h",
-                 $time, Present_state, DUT.BusMuxIn_PC, DUT.IR, DUT.BusMuxIn_LO, DUT.BusMuxIn_R3);
+        $monitor("time=%0t | state=%0d | PC=%h | IR=%h | HI=%h | R5=%h",
+                 $time, Present_state,
+                 DUT.BusMuxIn_PC,
+                 DUT.BusMuxIn_IR,
+                 DUT.BusMuxIn_HI,
+                 DUT.BusMuxIn_R5);
     end
 
     initial begin
         clear = 1;
         ExternalIn = 32'h00000000;
 
-        // mflo R3 => opcode 11001, Ra=0011
-        DUT.MEM.mem[9'h000] = 32'hC9800000;
+        // mfhi R5 => opcode 11000, Ra=R5=0101
+        // 11000_0101_0...0 = 1100_0010_1000_0000_0000_0000_0000_0000 = 32'hC2800000
+        DUT.MEM.ram.mem[9'h000] = 32'hC2800000;
 
-        #15 clear = 0;
+        #35 clear = 0;
+        force DUT.HI.q = 32'h12345678;
+        force DUT.PC.q = 32'h00000000;
+        #9;
+        release DUT.HI.q;
+        release DUT.PC.q;
     end
 
     always @(posedge clock) begin
@@ -106,32 +116,53 @@ module mflo_tb;
         CONin = 0;
 
         case (Present_state)
-            Init1a: DUT.BusMuxIn_LO = 32'h89ABCDEF;
-            Init1b: DUT.BusMuxIn_PC = 32'h00000000;
+            Init1a: begin end
+            Init1b: begin end
 
+            // T0: MAR <- PC
             T0: begin
-                PCout = 1; MARin = 1; IncPC = 1; Zin = 1;
+                PCout = 1; MARin = 1;
             end
 
+            // T1: MDR <- M[MAR]
             T1: begin
-                Zlowout = 1; PCin = 1; Read = 1; MDRin = 1;
+                Read = 1; MDRin = 1;
             end
 
+            // T2: IR <- MDR
             T2: begin
                 MDRout = 1; IRin = 1;
             end
 
-            // mflo: LOout, Gra, Rin
+            // T3: R5 <- HI  (Gra selects Ra=R5 from IR)
             T3: begin
-                LOout = 1; Gra = 1; Rin = 1;
+                HIout = 1; Gra = 1; Rin = 1;
             end
 
-            Done: begin
-                $display("Final R3  = %h", DUT.BusMuxIn_R3);
-                $display("Expected  = 89ABCDEF");
-                #20 $stop;
-            end
+            Done: begin end
+
         endcase
+    end
+
+    initial begin
+        @(Present_state == Done);
+        #25;
+        $display("==============================================");
+        $display("TEST: mfhi R5");
+        $display("  HI  = %h  (expected 12345678)", DUT.BusMuxIn_HI);
+        $display("  R5  = %h  (expected 12345678)", DUT.BusMuxIn_R5);
+        if (DUT.BusMuxIn_R5 === 32'h12345678)
+            $display("  ** PASS **");
+        else
+            $display("  ** FAIL **");
+        $display("==============================================");
+        $stop;
+    end
+
+    initial begin
+        #127500;
+        $display("Simulation timeout.");
+        $finish;
     end
 
 endmodule
