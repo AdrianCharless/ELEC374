@@ -64,18 +64,26 @@ module in_tb;
     end
 
     initial begin
-        $monitor("time=%0t | state=%0d | PC=%h | IR=%h | ExternalIn=%h | R3=%h",
-                 $time, Present_state, DUT.BusMuxIn_PC, DUT.IR, ExternalIn, DUT.BusMuxIn_R3);
+        $monitor("time=%0t | state=%0d | PC=%h | IR=%h | ExternalIn=%h | R5=%h",
+                 $time, Present_state,
+                 DUT.BusMuxIn_PC,
+                 DUT.BusMuxIn_IR,
+                 ExternalIn,
+                 DUT.BusMuxIn_R5);
     end
 
     initial begin
         clear = 1;
         ExternalIn = 32'hDEADBEEF;
 
-        // in R3 => opcode 10110, Ra=0011
-        DUT.MEM.mem[9'h000] = 32'hB1800000;
+        // in R5 => opcode 10110, Ra=R5=0101
+        // 10110_0101_0...0 = 1011_0010_1000_0000_0000_0000_0000_0000 = 32'hB2800000
+        DUT.MEM.ram.mem[9'h000] = 32'hB2800000;
 
-        #15 clear = 0;
+        #35 clear = 0;
+        force DUT.PC.q = 32'h00000000;
+        #9;
+        release DUT.PC.q;
     end
 
     always @(posedge clock) begin
@@ -106,32 +114,53 @@ module in_tb;
         CONin = 0;
 
         case (Present_state)
-            Init1a: DUT.BusMuxIn_PC = 32'h00000000;
-            Init1b: ; // nothing extra
+            Init1a: begin end
+            Init1b: begin end
 
+            // T0: MAR <- PC
             T0: begin
-                PCout = 1; MARin = 1; IncPC = 1; Zin = 1;
+                PCout = 1; MARin = 1;
             end
 
+            // T1: MDR <- M[MAR]
             T1: begin
-                Zlowout = 1; PCin = 1; Read = 1; MDRin = 1;
+                Read = 1; MDRin = 1;
             end
 
+            // T2: IR <- MDR
             T2: begin
                 MDRout = 1; IRin = 1;
             end
 
-            // in: InPortout, Gra, Rin
+            // T3: R5 <- InPort  (Gra selects Ra=R5 from IR)
             T3: begin
                 InPortout = 1; Gra = 1; Rin = 1;
             end
 
-            Done: begin
-                $display("Final R3  = %h", DUT.BusMuxIn_R3);
-                $display("Expected  = DEADBEEF");
-                #20 $stop;
-            end
+            Done: begin end
+
         endcase
+    end
+
+    initial begin
+        @(Present_state == Done);
+        #25;
+        $display("==============================================");
+        $display("TEST: in R5");
+        $display("  ExternalIn = %h  (expected DEADBEEF)", ExternalIn);
+        $display("  R5         = %h  (expected DEADBEEF)", DUT.BusMuxIn_R5);
+        if (DUT.BusMuxIn_R5 === 32'hDEADBEEF)
+            $display("  ** PASS **");
+        else
+            $display("  ** FAIL **");
+        $display("==============================================");
+        $stop;
+    end
+
+    initial begin
+        #127500;
+        $display("Simulation timeout.");
+        $finish;
     end
 
 endmodule
