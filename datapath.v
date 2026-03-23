@@ -117,7 +117,7 @@ Register LO(clear,clock,LOin,BusMuxOut,BusMuxIn_LO);
 // ALU
 wire [63:0] ALU_result;
 
-alu ALU(
+ALU alu(
     .A(BusMuxIn_Y),
     .B(BusMuxOut),
     .ADD(ADD),
@@ -138,7 +138,7 @@ alu ALU(
 
 // Z REGISTER
 wire [63:0] Zout;
-ZReg ZREG(
+ZREG ZReg(
     clear,
     clock,
     Zin,

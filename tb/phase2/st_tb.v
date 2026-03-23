@@ -78,6 +78,12 @@ module st_tb;
         .ExternalIn(ExternalIn)
     );
 
+    // I NEED THIS TO RUN WAVE FORM SIM - DOUG
+    initial begin
+        $dumpfile("waveforms.vcd");
+        $dumpvars(0, st_tb);
+    end
+
     initial begin
         clock = 0;
         forever #10 clock = ~clock;
