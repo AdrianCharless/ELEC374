@@ -99,7 +99,6 @@ module ori_tb;
         release DUT.PC.q;
     end
 
-    // State sequencer
     always @(posedge clock) begin
         case (Present_state)
             Default : Present_state = Init1a;
@@ -116,7 +115,6 @@ module ori_tb;
         endcase
     end
 
-    // Control signal logic
     always @(Present_state) begin
         Gra = 0;    Grb = 0;    Grc = 0;
         Rin = 0;    Rout = 0;   BAout = 0;  Cout = 0;
@@ -151,7 +149,7 @@ module ori_tb;
                 MDRout = 1; IRin = 1;
             end
 
-            // T3: Y <- R4  (Grb selects Rb=R4 from IR)
+            // T3: Y <- R4 
             T3: begin
                 Grb = 1; Rout = 1; Yin = 1;
             end
@@ -161,7 +159,7 @@ module ori_tb;
                 Cout = 1; OR = 1; Zin = 1;
             end
 
-            // T5: R7 <- Zlow  (Gra selects Ra=R7 from IR)
+            // T5: R7 <- Zlow  
             T5: begin
                 Zlowout = 1; Gra = 1; Rin = 1;
             end
@@ -175,21 +173,21 @@ module ori_tb;
     initial begin
         @(Present_state == Done);
         #25;
-        $display("==============================================");
+        $display("--------------------------------------------");
         $display("TEST: ori R7, R4, 0x71");
         $display("  R4  = %h  (expected 00000080)", DUT.BusMuxIn_R4);
         $display("  R7  = %h  (expected 000000F1)", DUT.BusMuxIn_R7);
         if (DUT.BusMuxIn_R7 === 32'h000000F1)
-            $display("  ** PASS **");
+            $display("  pass ");
         else
-            $display("  ** FAIL **");
-        $display("==============================================");
+            $display("  fail ");
+        $display("-------------------------------------------");
         $stop;
     end
 
     initial begin
         #127500;
-        $display("Simulation timeout.");
+        $display("done.");
         $finish;
     end
 
