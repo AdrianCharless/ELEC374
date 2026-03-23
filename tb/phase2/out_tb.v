@@ -65,17 +65,27 @@ module out_tb;
 
     initial begin
         $monitor("time=%0t | state=%0d | PC=%h | IR=%h | R3=%h | OutPort=%h",
-                 $time, Present_state, DUT.BusMuxIn_PC, DUT.IR, DUT.BusMuxIn_R3, DUT.OutPort);
+                 $time, Present_state,
+                 DUT.BusMuxIn_PC,
+                 DUT.BusMuxIn_IR,
+                 DUT.BusMuxIn_R3,
+                 DUT.IO.OutPortData);
     end
 
     initial begin
         clear = 1;
         ExternalIn = 32'h00000000;
 
-        // out R3 => opcode 10111, Ra=0011
-        DUT.MEM.mem[9'h000] = 32'hB9800000;
+        // out R3 => opcode 10111, Ra=R3=0011
+        // 10111_0011_0...0 = 1011_1001_1000_0000_0000_0000_0000_0000 = 32'hB9800000
+        DUT.MEM.ram.mem[9'h000] = 32'hB9800000;
 
-        #15 clear = 0;
+        #35 clear = 0;
+        force DUT.R3.q = 32'hCAFEBABE;
+        force DUT.PC.q = 32'h00000000;
+        #9;
+        release DUT.R3.q;
+        release DUT.PC.q;
     end
 
     always @(posedge clock) begin
@@ -106,32 +116,53 @@ module out_tb;
         CONin = 0;
 
         case (Present_state)
-            Init1a: DUT.BusMuxIn_R3 = 32'hCAFEBABE;
-            Init1b: DUT.BusMuxIn_PC = 32'h00000000;
+            Init1a: begin end
+            Init1b: begin end
 
+            // T0: MAR <- PC
             T0: begin
-                PCout = 1; MARin = 1; IncPC = 1; Zin = 1;
+                PCout = 1; MARin = 1;
             end
 
+            // T1: MDR <- M[MAR]
             T1: begin
-                Zlowout = 1; PCin = 1; Read = 1; MDRin = 1;
+                Read = 1; MDRin = 1;
             end
 
+            // T2: IR <- MDR
             T2: begin
                 MDRout = 1; IRin = 1;
             end
 
-            // out: Gra, Rout, OutPortin
+            // T3: OutPort <- R3  (Gra selects Ra=R3 from IR)
             T3: begin
                 Gra = 1; Rout = 1; OutPortin = 1;
             end
 
-            Done: begin
-                $display("Final OutPort  = %h", DUT.OutPort);
-                $display("Expected       = CAFEBABE");
-                #20 $stop;
-            end
+            Done: begin end
+
         endcase
+    end
+
+    initial begin
+        @(Present_state == Done);
+        #25;
+        $display("==============================================");
+        $display("TEST: out R3");
+        $display("  R3      = %h  (expected CAFEBABE)", DUT.BusMuxIn_R3);
+        $display("  OutPort = %h  (expected CAFEBABE)", DUT.IO.OutPortData);
+        if (DUT.IO.OutPortData === 32'hCAFEBABE)
+            $display("  ** PASS **");
+        else
+            $display("  ** FAIL **");
+        $display("==============================================");
+        $stop;
+    end
+
+    initial begin
+        #127500;
+        $display("Simulation timeout.");
+        $finish;
     end
 
 endmodule
