@@ -129,16 +129,12 @@ assign ALU_opcode = ADD  ? 5'b00000 :
                     NOT  ? 5'b01111 :
                     5'b00000;
 
-<<<<<<< HEAD
-ALU alu(
-=======
 // ALU outputs (separate ZLO / ZHI, no 64-bit bundle)
 wire [31:0] ALU_ZLO, ALU_ZHI;
 wire        ALU_div_by_zero;
 
 ALU ALU_inst(               // <-- module name is ALU, instance name ALU_inst
     .opcode(ALU_opcode),
->>>>>>> 083565bc110a11798c4aabb4d2e3fccc44615ef0
     .A(BusMuxIn_Y),
     .B(BusMuxOut),
     .ZLO(ALU_ZLO),
@@ -146,20 +142,8 @@ ALU ALU_inst(               // <-- module name is ALU, instance name ALU_inst
     .div_by_zero(ALU_div_by_zero)
 );
 
-<<<<<<< HEAD
-// Z REGISTER
-wire [63:0] Zout;
-ZREG ZReg(
-    clear,
-    clock,
-    Zin,
-    ALU_result,
-    Zout
-);
-=======
 // Z REGISTER - takes two 32-bit halves, outputs two 32-bit halves
 wire [31:0] BusMuxIn_Zlow, BusMuxIn_Zhigh;
->>>>>>> 083565bc110a11798c4aabb4d2e3fccc44615ef0
 
 ZREG ZREG_inst(             // <-- module name is ZREG
     .clear(clear),

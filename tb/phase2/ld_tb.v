@@ -174,20 +174,28 @@ module ld_tb;
 
         case (Present_state)
 
-            // preload R2 = 0x57
             Init1a: begin
-                DUT.BusMuxIn_R2 = 32'h00000057;
+                ExternalIn <= 32'h00000057;
+                MDRin      <= 1;
             end
 
-            // preload PC = 0
             Init1b: begin
-                DUT.BusMuxIn_PC = 32'h00000000;
+                MDRout <= 1;
+                PCin   <= 0;
+                Gra    <= 0;
+                Grb    <= 0;
+                Grc    <= 1;
+                Rin    <= 1;
             end
 
             Init2a: begin
+                ExternalIn <= 32'h00000000;
+                MDRin      <= 1;
             end
 
             Init2b: begin
+                MDRout <= 1;
+                PCin   <= 1;
             end
 
             // Case 1: ld R7, 0x65
