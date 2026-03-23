@@ -9,14 +9,13 @@ module con_ff(
 
     wire condition_result;
 
-    // instantiate the combinational condition logic
+    // instantiatin combinational condition logic
     branch_condition BC (
         .Bus(BusMuxOut),
         .C2(IR_C2[1:0]),
         .condition_result(condition_result)
     );
 
-    // the actual CON flip-flop
     always @(posedge clock or posedge clear) begin
         if (clear)
             CON <= 1'b0;
