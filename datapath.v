@@ -106,7 +106,18 @@ wire [31:0] BusMuxIn_Y;
 wire [31:0] BusMuxIn_HI;
 wire [31:0] BusMuxIn_LO;
 
-Register PC(clear, clock, PCin & (CON | ~branch_active), BusMuxOut, BusMuxIn_PC);
+wire branch_active;
+assign branch_active = 1'b0;   // no branch handling for phase 2 tests
+
+PC PC_reg(
+    .clear(clear),
+    .clock(clock),
+    .PCin(PCin & (CON | ~branch_active)),
+    .IncPC(IncPC),
+    .BusMuxOut(BusMuxOut),
+    .BusMuxInPC(BusMuxIn_PC)
+);
+
 Register IR(clear,clock,IRin,BusMuxOut,BusMuxIn_IR);
 Register Y (clear,clock,Yin ,BusMuxOut,BusMuxIn_Y);
 Register HI(clear,clock,HIin,BusMuxOut,BusMuxIn_HI);

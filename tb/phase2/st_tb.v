@@ -27,28 +27,29 @@ module st_tb;
 
     reg [31:0] ExternalIn;
 
-    parameter  Default    = 5'd0,
-               Init1a     = 5'd1,
-               Init1b     = 5'd2,
-               T0         = 5'd3,
-               T1         = 5'd4,
-               T2         = 5'd5,
-               T3         = 5'd6,
-               T4         = 5'd7,
-               T5         = 5'd8,
-               T6         = 5'd9,
-               T7         = 5'd10,
-               T0_2       = 5'd11,
-               T1_2       = 5'd12,
-               T2_2       = 5'd13,
-               T3_2       = 5'd14,
-               T4_2       = 5'd15,
-               T5_2       = 5'd16,
-               T6_2       = 5'd17,
-               T7_2       = 5'd18,
-               Done       = 5'd19;
+    parameter Default   = 5'd0,
+              Init1     = 5'd1,
+              T0        = 5'd2,
+              T1        = 5'd3,
+              T2        = 5'd4,
+              T3        = 5'd5,
+              T4        = 5'd6,
+              T5        = 5'd7,
+              T6        = 5'd8,
+              T7        = 5'd9,
+              SetPC1    = 5'd10,
+              SetPC1b   = 5'd11,
+              T0_2      = 5'd12,
+              T1_2      = 5'd13,
+              T2_2      = 5'd14,
+              T3_2      = 5'd15,
+              T4_2      = 5'd16,
+              T5_2      = 5'd17,
+              T6_2      = 5'd18,
+              T7_2      = 5'd19,
+              Done      = 5'd20;
 
-    reg [4:0] Present_state = Default;
+    reg [4:0] Present_state;
 
     datapath DUT (
         .clear(clear),
@@ -78,74 +79,116 @@ module st_tb;
         .ExternalIn(ExternalIn)
     );
 
-    // I NEED THIS TO RUN WAVE FORM SIM - DOUG
-    initial begin
-        $dumpfile("waveforms.vcd");
-        $dumpvars(0, st_tb);
-    end
-
+    // clock
     initial begin
         clock = 0;
         forever #10 clock = ~clock;
     end
 
+    // dump
+    initial begin
+        $dumpfile("waveforms.vcd");
+        $dumpvars(0, st_tb);
+    end
+
+    // monitor
     initial begin
         $monitor(
-            "time=%0t | PC=%h | R0=%h | R2=%h | R6=%h | R7=%h",
+            "time=%0t | state=%0d | PC=%h | IR=%h | Y=%h | ZLOW=%h | MAR=%h | MDR=%h | R0=%h | R6=%h | MEM[01F]=%h | MEM[082]=%h",
             $time,
+            Present_state,
             DUT.BusMuxIn_PC,
+            DUT.BusMuxIn_IR,
+            DUT.BusMuxIn_Y,
+            DUT.BusMuxIn_Zlow,
+            DUT.MAR_Q_unused,
+            DUT.BusMuxIn_MDR,
             DUT.BusMuxIn_R0,
-            DUT.BusMuxIn_R2,
             DUT.BusMuxIn_R6,
-            DUT.BusMuxIn_R7
+            DUT.MEM.ram.mem[9'h01F],
+            DUT.MEM.ram.mem[9'h082]
         );
     end
 
+    // init
     initial begin
-        clear = 1;
-        ExternalIn = 32'h00000000;
+        Present_state = Default;
+        clear         = 1;
+        ExternalIn    = 32'h00000000;
 
-        // placing instructions in memory
-        DUT.MEM.mem[9'h000] = 32'h9300001F;   // st 0x1F, R6
-        DUT.MEM.mem[9'h001] = 32'h9330001F;   // st 0x1F(R6), R6
+        // deassert all controls
+        Gra = 0; Grb = 0; Grc = 0;
+        Rin = 0; Rout = 0; BAout = 0; Cout = 0;
+        PCout = 0; Zlowout = 0; Zhighout = 0; MDRout = 0;
+        HIout = 0; LOout = 0; InPortout = 0;
+        PCin = 0; IRin = 0; Yin = 0; Zin = 0;
+        HIin = 0; LOin = 0; OutPortin = 0;
+        MARin = 0; MDRin = 0;
+        Read = 0; Write = 0; IncPC = 0;
+        ADD = 0; SUB = 0; AND = 0; OR = 0;
+        NEG = 0; NOT = 0;
+        SHR = 0; SHRA = 0; SHL = 0;
+        ROR = 0; ROL = 0;
+        MUL = 0; DIV = 0;
+        CONin = 0;
 
-        // placing data in memory
-        DUT.MEM.mem[9'h01F] = 32'h000000D4;   // initial value
-        DUT.MEM.mem[9'h082] = 32'h000000A7;   // initial value
+        // IMPORTANT: initialize the actual RAM
+        DUT.MEM.ram.mem[9'h000] = 32'h9300001F; // st 0x1F, R6
+        DUT.MEM.ram.mem[9'h001] = 32'h9330001F; // st 0x1F(R6), R0  (verify encoding)
+        DUT.MEM.ram.mem[9'h01F] = 32'h000000D4; // before case 1
+        DUT.MEM.ram.mem[9'h082] = 32'h000000A7; // before case 2
 
+        // release reset
         #15 clear = 0;
+
+        // preload registers robustly, same idea as ld_tb
+        #16 DUT.R6.q = 32'h00000063;
+        #16 DUT.R0.q = 32'h00000063;
+
+        $display("Before ST Case 1: MEM[01F] = %h", DUT.MEM.ram.mem[9'h01F]);
+        $display("Before ST Case 2: MEM[082] = %h", DUT.MEM.ram.mem[9'h082]);
     end
 
+    // state progression
     always @(posedge clock) begin
-        case (Present_state)
-            Default : Present_state = Init1a;
-            Init1a  : Present_state = Init1b;
-            Init1b  : Present_state = T0;
+        if (clear)
+            Present_state <= Default;
+        else begin
+            case (Present_state)
+                Default : Present_state <= Init1;
 
-            T0      : Present_state = T1;
-            T1      : Present_state = T2;
-            T2      : Present_state = T3;
-            T3      : Present_state = T4;
-            T4      : Present_state = T5;
-            T5      : Present_state = T6;
-            T6      : Present_state = T7;
-            T7      : Present_state = T0_2;
+                Init1   : Present_state <= T0;
 
-            T0_2    : Present_state = T1_2;
-            T1_2    : Present_state = T2_2;
-            T2_2    : Present_state = T3_2;
-            T3_2    : Present_state = T4_2;
-            T4_2    : Present_state = T5_2;
-            T5_2    : Present_state = T6_2;
-            T6_2    : Present_state = T7_2;
-            T7_2    : Present_state = Done;
+                T0      : Present_state <= T1;
+                T1      : Present_state <= T2;
+                T2      : Present_state <= T3;
+                T3      : Present_state <= T4;
+                T4      : Present_state <= T5;
+                T5      : Present_state <= T6;
+                T6      : Present_state <= T7;
+                T7      : Present_state <= SetPC1;
 
-            Done    : Present_state = Done;
-            default : Present_state = Done;
-        endcase
+                SetPC1  : Present_state <= SetPC1b;
+                SetPC1b : Present_state <= T0_2;
+
+                T0_2    : Present_state <= T1_2;
+                T1_2    : Present_state <= T2_2;
+                T2_2    : Present_state <= T3_2;
+                T3_2    : Present_state <= T4_2;
+                T4_2    : Present_state <= T5_2;
+                T5_2    : Present_state <= T6_2;
+                T6_2    : Present_state <= T7_2;
+                T7_2    : Present_state <= Done;
+
+                Done    : Present_state <= Done;
+                default : Present_state <= Done;
+            endcase
+        end
     end
 
-    always @(Present_state) begin
+    // output logic
+    always @(*) begin
+        // default deassertion
         Gra = 0;        Grb = 0;        Grc = 0;
         Rin = 0;        Rout = 0;       BAout = 0;      Cout = 0;
 
@@ -166,58 +209,56 @@ module st_tb;
         MUL = 0;        DIV = 0;
 
         CONin = 0;
+        ExternalIn = 32'h00000000;
 
         case (Present_state)
 
-            Init1a: begin
-                DUT.BusMuxIn_R6 = 32'h00000063;
+            // no-op settle state after reset
+            Init1: begin
             end
 
-            Init1b: begin
-                DUT.BusMuxIn_PC = 32'h00000000;
-            end
-
-            // Case 1: st 0x1F, R6
-            // inferred from ld
+            // CASE 1: st 0x1F, R6
+            // fetch instruction at PC = 0
             T0: begin
                 PCout = 1;
                 MARin = 1;
                 IncPC = 1;
-                Zin = 1;
+                Zin   = 1;
             end
 
             T1: begin
                 Zlowout = 1;
-                PCin = 1;
-                Read = 1;
-                MDRin = 1;
+                PCin    = 1;
+                Read    = 1;
+                MDRin   = 1;
             end
 
             T2: begin
                 MDRout = 1;
-                IRin = 1;
+                IRin   = 1;
             end
 
+            // effective address = 0 + C
             T3: begin
-                Grb = 1;
+                Grb   = 1;
                 BAout = 1;
-                Yin = 1;
+                Yin   = 1;
             end
 
             T4: begin
                 Cout = 1;
-                ADD = 1;
-                Zin = 1;
+                ADD  = 1;
+                Zin  = 1;
             end
 
             T5: begin
                 Zlowout = 1;
-                MARin = 1;
+                MARin   = 1;
             end
 
             T6: begin
-                Gra = 1;
-                Rout = 1;
+                Gra   = 1;
+                Rout  = 1;
                 MDRin = 1;
             end
 
@@ -225,46 +266,59 @@ module st_tb;
                 Write = 1;
             end
 
-            // Case 2: st 0x1F(R6), R6
+            // manually load PC = 1 before case 2
+            SetPC1: begin
+                ExternalIn = 32'h00000001;
+                InPortout  = 1;
+                PCin       = 1;
+            end
+
+            SetPC1b: begin
+            end
+
+            // CASE 2: st 0x1F(R6), R0
+            // fetch instruction at PC = 1
             T0_2: begin
                 PCout = 1;
                 MARin = 1;
                 IncPC = 1;
-                Zin = 1;
+                Zin   = 1;
             end
 
             T1_2: begin
                 Zlowout = 1;
-                PCin = 1;
-                Read = 1;
-                MDRin = 1;
+                PCin    = 1;
+                Read    = 1;
+                MDRin   = 1;
             end
 
             T2_2: begin
                 MDRout = 1;
-                IRin = 1;
+                IRin   = 1;
             end
 
+            // effective address = R6 + C
             T3_2: begin
-                Grb = 1;
-                BAout = 1;
-                Yin = 1;
+                Grb  = 1;
+                Rout = 1;
+                Yin  = 1;
             end
 
             T4_2: begin
                 Cout = 1;
-                ADD = 1;
-                Zin = 1;
+                ADD  = 1;
+                Zin  = 1;
             end
 
             T5_2: begin
                 Zlowout = 1;
-                MARin = 1;
+                MARin   = 1;
             end
 
+            // source register to store = Ra
             T6_2: begin
-                Gra = 1;
-                Rout = 1;
+                Gra   = 1;
+                Rout  = 1;
                 MDRin = 1;
             end
 
@@ -273,9 +327,11 @@ module st_tb;
             end
 
             Done: begin
-                $display("ST Case 1 result: mem[01F] = %h (expected 00000063)", DUT.MEM.mem[9'h01F]);
-                $display("ST Case 2 result: mem[082] = %h (expected 00000063)", DUT.MEM.mem[9'h082]);
-                #20 $stop;
+                $display("After ST Case 1: MEM[01F] = %h (expected 00000063)", DUT.MEM.ram.mem[9'h01F]);
+                $display("After ST Case 2: MEM[082] = %h (expected 00000063)", DUT.MEM.ram.mem[9'h082]);
+                $display("ST Case 1 result: MEM[01F] = %h (written from R0)", DUT.MEM.ram.mem[9'h01F]);
+                $display("ST Case 2 result: MEM[082] = %h (written from R6)", DUT.MEM.ram.mem[9'h082]);
+                #20 $finish;
             end
         endcase
     end

@@ -27,24 +27,25 @@ module ldi_tb;
 
     reg [31:0] ExternalIn;
 
-    parameter  Default    = 5'd0,
-               Init1a     = 5'd1,
-               Init1b     = 5'd2,
-               T0         = 5'd3,
-               T1         = 5'd4,
-               T2         = 5'd5,
-               T3         = 5'd6,
-               T4         = 5'd7,
-               T5         = 5'd8,
-               T0_2       = 5'd9,
-               T1_2       = 5'd10,
-               T2_2       = 5'd11,
-               T3_2       = 5'd12,
-               T4_2       = 5'd13,
-               T5_2       = 5'd14,
-               Done       = 5'd15;
+    parameter Default   = 5'd0,
+              Init1     = 5'd1,
+              T0        = 5'd2,
+              T1        = 5'd3,
+              T2        = 5'd4,
+              T3        = 5'd5,
+              T4        = 5'd6,
+              T5        = 5'd7,
+              SetPC1    = 5'd8,
+              SetPC1b   = 5'd9,
+              T0_2      = 5'd10,
+              T1_2      = 5'd11,
+              T2_2      = 5'd12,
+              T3_2      = 5'd13,
+              T4_2      = 5'd14,
+              T5_2      = 5'd15,
+              Done      = 5'd16;
 
-    reg [4:0] Present_state = Default;
+    reg [4:0] Present_state;
 
     datapath DUT (
         .clear(clear),
@@ -74,68 +75,110 @@ module ldi_tb;
         .ExternalIn(ExternalIn)
     );
 
-    // I NEED THIS TO RUN WAVE FORM SIM - DOUG
-    initial begin
-        $dumpfile("waveforms.vcd");
-        $dumpvars(0, ldi_tb);
-    end
-
+    // clock
     initial begin
         clock = 0;
         forever #10 clock = ~clock;
     end
 
+    // dump
+    initial begin
+        $dumpfile("waveforms.vcd");
+        $dumpvars(0, ldi_tb);
+    end
+
+    // monitor
     initial begin
         $monitor(
-            "time=%0t | PC=%h | R0=%h | R2=%h | R6=%h | R7=%h",
+            "time=%0t | state=%0d | PC=%h | IR=%h | Y=%h | ZLOW=%h | MAR=%h | MDR=%h | R0=%h | R2=%h | R7=%h | MEM[065]=%h | MEM[0C9]=%h",
             $time,
+            Present_state,
             DUT.BusMuxIn_PC,
+            DUT.BusMuxIn_IR,
+            DUT.BusMuxIn_Y,
+            DUT.BusMuxIn_Zlow,
+            DUT.MAR_Q_unused,
+            DUT.BusMuxIn_MDR,
             DUT.BusMuxIn_R0,
             DUT.BusMuxIn_R2,
-            DUT.BusMuxIn_R6,
-            DUT.BusMuxIn_R7
+            DUT.BusMuxIn_R7,
+            DUT.MEM.ram.mem[9'h065],
+            DUT.MEM.ram.mem[9'h0C9]
         );
     end
 
+    // init
     initial begin
-        clear = 1;
-        ExternalIn = 32'h00000000;
+        Present_state = Default;
+        clear         = 1;
+        ExternalIn    = 32'h00000000;
 
-        // placing instructions in memory
-        DUT.MEM.mem[9'h000] = 32'h8B800065;   // ldi R7, 0x65
-        DUT.MEM.mem[9'h001] = 32'h88100072;   // ldi R0, 0x72(R2)
+        // deassert all controls
+        Gra = 0; Grb = 0; Grc = 0;
+        Rin = 0; Rout = 0; BAout = 0; Cout = 0;
+        PCout = 0; Zlowout = 0; Zhighout = 0; MDRout = 0;
+        HIout = 0; LOout = 0; InPortout = 0;
+        PCin = 0; IRin = 0; Yin = 0; Zin = 0;
+        HIin = 0; LOin = 0; OutPortin = 0;
+        MARin = 0; MDRin = 0;
+        Read = 0; Write = 0; IncPC = 0;
+        ADD = 0; SUB = 0; AND = 0; OR = 0;
+        NEG = 0; NOT = 0;
+        SHR = 0; SHRA = 0; SHL = 0;
+        ROR = 0; ROL = 0;
+        MUL = 0; DIV = 0;
+        CONin = 0;
 
-        // no data in memory since it comes from immediate value C
+        // IMPORTANT: initialize actual RAM, same style as ld_tb
+        DUT.MEM.ram.mem[9'h000] = 32'h8B800065; // ldi R7, 0x65
+        DUT.MEM.ram.mem[9'h001] = 32'h88100072; // ldi R0, 0x72(R2)
 
+        // release reset
         #15 clear = 0;
+
+        // preload R2 robustly without depending on IR decode
+        #16 DUT.R2.q = 32'h00000057;
+
+        $display("Before LDi Case 1: MEM[065] = %h", DUT.MEM.ram.mem[9'h065]);
+        $display("Before LDi Case 2: MEM[0C9] = %h", DUT.MEM.ram.mem[9'h0C9]);
     end
 
+    // state progression
     always @(posedge clock) begin
-        case (Present_state)
-            Default : Present_state = Init1a;
-            Init1a  : Present_state = Init1b;
-            Init1b  : Present_state = T0;
+        if (clear)
+            Present_state <= Default;
+        else begin
+            case (Present_state)
+                Default : Present_state <= Init1;
 
-            T0      : Present_state = T1;
-            T1      : Present_state = T2;
-            T2      : Present_state = T3;
-            T3      : Present_state = T4;
-            T4      : Present_state = T5;
-            T5      : Present_state = T0_2;
+                Init1   : Present_state <= T0;
 
-            T0_2    : Present_state = T1_2;
-            T1_2    : Present_state = T2_2;
-            T2_2    : Present_state = T3_2;
-            T3_2    : Present_state = T4_2;
-            T4_2    : Present_state = T5_2;
-            T5_2    : Present_state = Done;
+                T0      : Present_state <= T1;
+                T1      : Present_state <= T2;
+                T2      : Present_state <= T3;
+                T3      : Present_state <= T4;
+                T4      : Present_state <= T5;
+                T5      : Present_state <= SetPC1;
 
-            Done    : Present_state = Done;
-            default : Present_state = Done;
-        endcase
+                SetPC1  : Present_state <= SetPC1b;
+                SetPC1b : Present_state <= T0_2;
+
+                T0_2    : Present_state <= T1_2;
+                T1_2    : Present_state <= T2_2;
+                T2_2    : Present_state <= T3_2;
+                T3_2    : Present_state <= T4_2;
+                T4_2    : Present_state <= T5_2;
+                T5_2    : Present_state <= Done;
+
+                Done    : Present_state <= Done;
+                default : Present_state <= Done;
+            endcase
+        end
     end
 
-    always @(Present_state) begin
+    // output logic
+    always @(*) begin
+        // default deassertion
         Gra = 0;        Grb = 0;        Grc = 0;
         Rin = 0;        Rout = 0;       BAout = 0;      Cout = 0;
 
@@ -156,97 +199,110 @@ module ldi_tb;
         MUL = 0;        DIV = 0;
 
         CONin = 0;
+        ExternalIn = 32'h00000000;
 
         case (Present_state)
 
-            Init1a: begin
-                DUT.BusMuxIn_R2 = 32'h00000057;
+            // no-op settle state after reset
+            Init1: begin
             end
 
-            Init1b: begin
-                DUT.BusMuxIn_PC = 32'h00000000;
-            end
-
-            // Case 1: ldi R7, 0x65
+            // CASE 1: ldi R7, 0x65
+            // fetch instruction at PC = 0
             T0: begin
                 PCout = 1;
                 MARin = 1;
                 IncPC = 1;
-                Zin = 1;
+                Zin   = 1;
             end
 
             T1: begin
                 Zlowout = 1;
-                PCin = 1;
-                Read = 1;
-                MDRin = 1;
+                PCin    = 1;
+                Read    = 1;
+                MDRin   = 1;
             end
 
             T2: begin
                 MDRout = 1;
-                IRin = 1;
+                IRin   = 1;
             end
 
+            // effective value = 0 + C
             T3: begin
-                Grb = 1;
+                Grb   = 1;
                 BAout = 1;
-                Yin = 1;
+                Yin   = 1;
             end
 
             T4: begin
                 Cout = 1;
-                ADD = 1;
-                Zin = 1;
+                ADD  = 1;
+                Zin  = 1;
             end
 
             T5: begin
                 Zlowout = 1;
-                Gra = 1;
-                Rin = 1;
+                Gra     = 1;
+                Rin     = 1;
             end
 
-            // Case 2: ldi R0, 0x72(R2)
+            // manually load PC = 1 before case 2
+            SetPC1: begin
+                ExternalIn = 32'h00000001;
+                InPortout  = 1;
+                PCin       = 1;
+            end
+
+            SetPC1b: begin
+            end
+
+            // CASE 2: ldi R0, 0x72(R2)
+            // fetch instruction at PC = 1
             T0_2: begin
                 PCout = 1;
                 MARin = 1;
                 IncPC = 1;
-                Zin = 1;
+                Zin   = 1;
             end
 
             T1_2: begin
                 Zlowout = 1;
-                PCin = 1;
-                Read = 1;
-                MDRin = 1;
+                PCin    = 1;
+                Read    = 1;
+                MDRin   = 1;
             end
 
             T2_2: begin
                 MDRout = 1;
-                IRin = 1;
+                IRin   = 1;
             end
 
+            // effective value = R2 + C
             T3_2: begin
-                Grb = 1;
-                BAout = 1;
-                Yin = 1;
+                Grb  = 1;
+                Rout = 1;
+                Yin  = 1;
             end
 
             T4_2: begin
                 Cout = 1;
-                ADD = 1;
-                Zin = 1;
+                ADD  = 1;
+                Zin  = 1;
             end
 
             T5_2: begin
                 Zlowout = 1;
-                Gra = 1;
-                Rin = 1;
+                Gra     = 1;
+                Rin     = 1;
             end
 
             Done: begin
-                $display("LDI Case 1 result: R7 = %h (expected 00000065)", DUT.BusMuxIn_R7);
-                $display("LDI Case 2 result: R0 = %h (expected 000000C9)", DUT.BusMuxIn_R0);
-                #20 $stop;
+                #1;
+                $display("LDi Case 1 result: R7 = %h (expected 00000065)", DUT.BusMuxIn_R7);
+                $display("LDi Case 2 result: R0 = %h (expected 000000C9)", DUT.BusMuxIn_R0);
+
+                #19 $finish;
             end
         endcase
     end
