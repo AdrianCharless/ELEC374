@@ -91,10 +91,10 @@ module ld_tb;
         $dumpvars(0, ld_tb);
     end
 
-    // monitor - DEMO
+    // REPORT
     initial begin
         $monitor(
-            "time=%0t | state=%0d | PC=%h | IR=%h | Y=%h | ZLOW=%h | MAR=%h | MDR=%h | R0=%h | R2=%h | R7=%h | MEM[065]=%h | MEM[0C9]=%h",
+            "time=%0t | state=%0d | PC=%h | IR=%h | Y=%h | ZLOW=%h | MAR=%h | MDR=%h | R5=%h | R2=%h | R7=%h | MEM[065]=%h | MEM[0C9]=%h",
             $time,
             Present_state,
             DUT.BusMuxIn_PC,
@@ -103,7 +103,7 @@ module ld_tb;
             DUT.BusMuxIn_Zlow,
             DUT.MAR_Q_unused,
             DUT.BusMuxIn_MDR,
-            DUT.BusMuxIn_R0,
+            DUT.BusMuxIn_R5,
             DUT.BusMuxIn_R2,
             DUT.BusMuxIn_R7,
             DUT.MEM.ram.mem[9'h065],
@@ -133,22 +133,22 @@ module ld_tb;
         MUL = 0; DIV = 0;
         CONin = 0;
 
-        // instruction memory - DEMO TEST CASES
+        // instruction memory - REPORT TEST CASES
         DUT.MEM.ram.mem[9'h000] = 32'h83800065; // ld R7, 0x65
-        DUT.MEM.ram.mem[9'h001] = 32'h80100072; // ld R0, 0x72(R2)
+        DUT.MEM.ram.mem[9'h001] = 32'h8297FFFC; // ld R5, -4(R2)
 
-        // data memory - DEMO TEST CASES
-        DUT.MEM.ram.mem[9'h065] = 32'h00000084; // (0x65) = 0x84
-        DUT.MEM.ram.mem[9'h0C9] = 32'h0000002B; // (0xC9) = 0x2B
+        // data memory - REPORT TEST CASES
+        DUT.MEM.ram.mem[9'h065] = 32'h00000084; // case 1 source
+        DUT.MEM.ram.mem[9'h00C] = 32'hDEADBEEF; // case 2 source: 0x10 + (-4) = 0x0C
 
         // release reset
         #15 clear = 0;
 
-        // preload R2 = 0x57 for case 2 - DEMO
-        #16 DUT.R2.q = 32'h00000057;
+        // preload R2 = 0x10 for case 2 - REPORT
+        #16 DUT.R2.q = 32'h00000010;
 
         $display("Before LD Case 1: MEM[065] = %h", DUT.MEM.ram.mem[9'h065]);
-        $display("Before LD Case 2: MEM[0C9] = %h", DUT.MEM.ram.mem[9'h0C9]);    // DEMO
+        $display("Before LD Case 2: MEM[00C] = %h", DUT.MEM.ram.mem[9'h00C]);       // REPORT
     end
 
     // state progression
@@ -279,7 +279,7 @@ module ld_tb;
             SetPC1b: begin
             end
 
-            // CASE 2: ld R0, 0x72(R2)
+            // CASE 2: ld R5, -4(R2)
             // fetch instruction at PC = 1
             T0_2: begin
                 PCout = 1;
@@ -300,7 +300,6 @@ module ld_tb;
                 IRin   = 1;
             end
 
-            // effective address = R2 + C = 0x57 + 0x72 = 0xC9
             T3_2: begin
                 Grb   = 1;
                 BAout = 1;
@@ -331,11 +330,10 @@ module ld_tb;
 
             Done: begin
                 #1;
-                // DEMO
                 $display("After LD Case 1:  MEM[065] = %h (expected 00000084)", DUT.MEM.ram.mem[9'h065]);
-                $display("After LD Case 2:  MEM[0C9] = %h (expected 0000002B source unchanged)", DUT.MEM.ram.mem[9'h0C9]);
+                $display("After LD Case 2:  MEM[00C] = %h (expected DEADBEEF, source unchanged)", DUT.MEM.ram.mem[9'h00C]);
                 $display("LD Case 1 result: R7 = %h (expected 00000084)", DUT.BusMuxIn_R7);
-                $display("LD Case 2 result: R0 = %h (expected 0000002B)", DUT.BusMuxIn_R0);
+                $display("LD Case 2 result: R5 = %h (expected DEADBEEF)", DUT.BusMuxIn_R5);
                 #19 $finish;
             end
         endcase

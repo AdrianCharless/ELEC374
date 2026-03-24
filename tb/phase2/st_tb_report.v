@@ -1,6 +1,6 @@
 `timescale 1ns/10ps
 
-module ld_tb;
+module st_tb;
 
     reg clear, clock;
 
@@ -88,13 +88,13 @@ module ld_tb;
     // dump
     initial begin
         $dumpfile("waveforms.vcd");
-        $dumpvars(0, ld_tb);
+        $dumpvars(0, st_tb);
     end
 
-    // monitor - DEMO
+    // monitor
     initial begin
         $monitor(
-            "time=%0t | state=%0d | PC=%h | IR=%h | Y=%h | ZLOW=%h | MAR=%h | MDR=%h | R0=%h | R2=%h | R7=%h | MEM[065]=%h | MEM[0C9]=%h",
+            "time=%0t | state=%0d | PC=%h | IR=%h | Y=%h | ZLOW=%h | MAR=%h | MDR=%h | R0=%h | R2=%h | R3=%h | R6=%h | MEM[01F]=%h | MEM[00C]=%h",
             $time,
             Present_state,
             DUT.BusMuxIn_PC,
@@ -105,9 +105,10 @@ module ld_tb;
             DUT.BusMuxIn_MDR,
             DUT.BusMuxIn_R0,
             DUT.BusMuxIn_R2,
-            DUT.BusMuxIn_R7,
-            DUT.MEM.ram.mem[9'h065],
-            DUT.MEM.ram.mem[9'h0C9]
+            DUT.BusMuxIn_R3,
+            DUT.BusMuxIn_R6,
+            DUT.MEM.ram.mem[9'h01F],
+            DUT.MEM.ram.mem[9'h00C]
         );
     end
 
@@ -133,22 +134,32 @@ module ld_tb;
         MUL = 0; DIV = 0;
         CONin = 0;
 
-        // instruction memory - DEMO TEST CASES
-        DUT.MEM.ram.mem[9'h000] = 32'h83800065; // ld R7, 0x65
-        DUT.MEM.ram.mem[9'h001] = 32'h80100072; // ld R0, 0x72(R2)
 
-        // data memory - DEMO TEST CASES
-        DUT.MEM.ram.mem[9'h065] = 32'h00000084; // (0x65) = 0x84
-        DUT.MEM.ram.mem[9'h0C9] = 32'h0000002B; // (0xC9) = 0x2B
+        // instruction memory - case 1
+        DUT.MEM.ram.mem[9'h000] = 32'h9300001F; // st 0x1F(R0), R6
+
+        // data memory - case 1
+        DUT.MEM.ram.mem[9'h01F] = 32'h00000000; // before write
+
+        // instruction memory - case 2
+        DUT.MEM.ram.mem[9'h001] = 32'h9197FFFC; // st -4(R2), R3
+
+        // data memory - case 2
+        DUT.MEM.ram.mem[9'h00C] = 32'h00000000; // before write
+
+
 
         // release reset
         #15 clear = 0;
 
-        // preload R2 = 0x57 for case 2 - DEMO
-        #16 DUT.R2.q = 32'h00000057;
+        #16 DUT.R6.q = 32'hABCD1234;
+        #16 DUT.R0.q = 32'h00000000; // base register
 
-        $display("Before LD Case 1: MEM[065] = %h", DUT.MEM.ram.mem[9'h065]);
-        $display("Before LD Case 2: MEM[0C9] = %h", DUT.MEM.ram.mem[9'h0C9]);    // DEMO
+        #16 DUT.R2.q = 32'h00000010;
+        #16 DUT.R3.q = 32'h12345678;
+
+        $display("Before ST Case 1: MEM[01F] = %h", DUT.MEM.ram.mem[9'h01F]);
+        $display("Before ST Case 2: MEM[00C] = %h", DUT.MEM.ram.mem[9'h00C]);
     end
 
     // state progression
@@ -219,7 +230,7 @@ module ld_tb;
             Init1: begin
             end
 
-            // CASE 1: ld R7, 0x65
+            // CASE 1: st 0x1F, R6
             // fetch instruction at PC = 0
             T0: begin
                 PCout = 1;
@@ -259,14 +270,13 @@ module ld_tb;
             end
 
             T6: begin
-                Read  = 1;
+                Gra   = 1;
+                Rout  = 1;
                 MDRin = 1;
             end
 
             T7: begin
-                MDRout = 1;
-                Gra    = 1;
-                Rin    = 1;
+                Write = 1;
             end
 
             // manually load PC = 1 before case 2
@@ -279,7 +289,7 @@ module ld_tb;
             SetPC1b: begin
             end
 
-            // CASE 2: ld R0, 0x72(R2)
+            // CASE 2: st 0x1F(R6), R0
             // fetch instruction at PC = 1
             T0_2: begin
                 PCout = 1;
@@ -300,11 +310,11 @@ module ld_tb;
                 IRin   = 1;
             end
 
-            // effective address = R2 + C = 0x57 + 0x72 = 0xC9
+            // effective address = R6 + C
             T3_2: begin
-                Grb   = 1;
-                BAout = 1;
-                Yin   = 1;
+                Grb  = 1;
+                Rout = 1;
+                Yin  = 1;
             end
 
             T4_2: begin
@@ -318,25 +328,24 @@ module ld_tb;
                 MARin   = 1;
             end
 
+            // source register to store = Ra
             T6_2: begin
-                Read  = 1;
+                Gra   = 1;
+                Rout  = 1;
                 MDRin = 1;
             end
 
             T7_2: begin
-                MDRout = 1;
-                Gra    = 1;
-                Rin    = 1;
+                Write = 1;
             end
 
             Done: begin
-                #1;
-                // DEMO
-                $display("After LD Case 1:  MEM[065] = %h (expected 00000084)", DUT.MEM.ram.mem[9'h065]);
-                $display("After LD Case 2:  MEM[0C9] = %h (expected 0000002B source unchanged)", DUT.MEM.ram.mem[9'h0C9]);
-                $display("LD Case 1 result: R7 = %h (expected 00000084)", DUT.BusMuxIn_R7);
-                $display("LD Case 2 result: R0 = %h (expected 0000002B)", DUT.BusMuxIn_R0);
-                #19 $finish;
+                $display("After ST Case 1: MEM[01F] = %h (expected ABCD1234)", DUT.MEM.ram.mem[9'h01F]);
+                $display("ST Case 1 result: MEM[01F] = %h (written from R6)", DUT.MEM.ram.mem[9'h01F]);
+
+                $display("After ST Case 2: MEM[00C] = %h (expected 12345678)", DUT.MEM.ram.mem[9'h00C]);
+                $display("ST Case 2 result: MEM[00C] = %h (written from R3)", DUT.MEM.ram.mem[9'h00C]);
+                #20 $finish;
             end
         endcase
     end
