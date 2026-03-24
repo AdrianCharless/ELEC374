@@ -81,8 +81,8 @@ module mfhi_tb;
         DUT.MEM.ram.mem[9'h000] = 32'hC2800000;
 
         #35 clear = 0;
-        force DUT.HI.q = 32'h12345678;
-        force DUT.PC.q = 32'h00000000;
+        force DUT.HI.q = 32'h00001234;
+        force DUT.PC.q = 32'h00001234;
         #9;
         release DUT.HI.q;
         release DUT.PC.q;
