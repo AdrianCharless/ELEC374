@@ -64,11 +64,11 @@ module out_tb;
     end
 
     initial begin
-        $monitor("time=%0t | state=%0d | PC=%h | IR=%h | R3=%h | OutPort=%h",
+        $monitor("time=%0t | state=%0d | PC=%h | IR=%h | R7=%h | OutPort=%h",
                  $time, Present_state,
                  DUT.BusMuxIn_PC,
                  DUT.BusMuxIn_IR,
-                 DUT.BusMuxIn_R3,
+                 DUT.BusMuxIn_R7,
                  DUT.IO.OutPortData);
     end
 
@@ -76,15 +76,16 @@ module out_tb;
         clear = 1;
         ExternalIn = 32'h00000000;
 
-        // out R3 => opcode 10111, Ra=R3=0011
-        // 10111_0011_0...0 = 1011_1001_1000_0000_0000_0000_0000_0000 = 32'hB9800000
-        DUT.MEM.ram.mem[9'h000] = 32'hB9800000;
+        // out R7 => opcode 10111, Ra=R7=0111
+        // 10111_0111_0...0 = 1011_1011_1000_0000_0000_0000_0000_0000 = 32'hBB800000
+        DUT.MEM.ram.mem[9'h000] = 32'hBB800000;
 
         #35 clear = 0;
-        force DUT.R3.q = 32'h000000AB;
+        // preload R7 = 0xAB, PC = 0
+        force DUT.R7.q = 32'h000000AB;
         force DUT.PC.q = 32'h00000000;
         #9;
-        release DUT.R3.q;
+        release DUT.R7.q;
         release DUT.PC.q;
     end
 
@@ -103,38 +104,44 @@ module out_tb;
     end
 
     always @(Present_state) begin
-        Gra = 0; Grb = 0; Grc = 0;
-        Rin = 0; Rout = 0; BAout = 0; Cout = 0;
-        PCout = 0; Zlowout = 0; Zhighout = 0; MDRout = 0;
-        HIout = 0; LOout = 0; InPortout = 0;
-        PCin = 0; IRin = 0; Yin = 0; Zin = 0;
-        HIin = 0; LOin = 0; OutPortin = 0;
-        MARin = 0; MDRin = 0; Read = 0; Write = 0; IncPC = 0;
-        ADD = 0; SUB = 0; AND = 0; OR = 0;
-        NEG = 0; NOT = 0; SHR = 0; SHRA = 0; SHL = 0;
-        ROR = 0; ROL = 0; MUL = 0; DIV = 0;
+        Gra = 0;        Grb = 0;        Grc = 0;
+        Rin = 0;        Rout = 0;       BAout = 0;      Cout = 0;
+
+        PCout = 0;      Zlowout = 0;    Zhighout = 0;   MDRout = 0;
+        HIout = 0;      LOout = 0;      InPortout = 0;
+
+        PCin = 0;       IRin = 0;       Yin = 0;        Zin = 0;
+        HIin = 0;       LOin = 0;       OutPortin = 0;
+
+        MARin = 0;      MDRin = 0;
+        Read = 0;       Write = 0;
+        IncPC = 0;
+
+        ADD = 0;        SUB = 0;        AND = 0;        OR = 0;
+        NEG = 0;        NOT = 0;
+        SHR = 0;        SHRA = 0;       SHL = 0;
+        ROR = 0;        ROL = 0;
+        MUL = 0;        DIV = 0;
+
         CONin = 0;
 
         case (Present_state)
             Init1a: begin end
             Init1b: begin end
 
-            // T0: MAR <- PC
             T0: begin
                 PCout = 1; MARin = 1;
             end
 
-            // T1: MDR <- M[MAR]
             T1: begin
                 Read = 1; MDRin = 1;
             end
 
-            // T2: IR <- MDR
             T2: begin
                 MDRout = 1; IRin = 1;
             end
 
-            // T3: OutPort <- R3  (Gra selects Ra=R3 from IR)
+            // R7 -> bus -> OutPort
             T3: begin
                 Gra = 1; Rout = 1; OutPortin = 1;
             end
@@ -147,15 +154,15 @@ module out_tb;
     initial begin
         @(Present_state == Done);
         #25;
-        $display("==============================================");
-        $display("TEST: out R3");
+        $display("out R7 result: OutPort = %h (expected 000000AB)", DUT.IO.OutPortData);
         $stop;
     end
 
     initial begin
         #127500;
-        $display("Simulation timeout.");
+        $display("Simulation complete.");
         $finish;
     end
 
 endmodule
+
