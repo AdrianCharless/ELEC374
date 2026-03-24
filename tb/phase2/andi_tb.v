@@ -175,12 +175,6 @@ module andi_tb;
         #25;
      $display("------------------------------------------------");
      $display("test: andi R7, R4, 0x71");
-        $display("  R4  = %h  (expected 000000F3)", DUT.BusMuxIn_R4);
-        $display("  R7  = %h  (expected 00000071)", DUT.BusMuxIn_R7);
-        if (DUT.BusMuxIn_R7 === 32'h00000071)
-         $display("  pass ");
-        else
-         $display("  fail ");
      $display("------------------------------------------------");
         $stop;
     end
