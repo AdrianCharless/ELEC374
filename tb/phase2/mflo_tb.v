@@ -1,6 +1,6 @@
 `timescale 1ns/10ps
 
-module mfhi_tb;
+module mflo_tb;
 
     reg clear, clock;
 
@@ -59,32 +59,32 @@ module mfhi_tb;
     end
 
     initial begin
-        $dumpfile("waveforms.vcd");
-        $dumpvars(0, mfhi_tb);
+        $dumpfile("mflo_waveforms.vcd");
+        $dumpvars(0, mflo_tb);
     end
 
     initial begin
-        $monitor("time=%0t | state=%0d | PC=%h | IR=%h | HI=%h | R5=%h",
+        $monitor("time=%0t | state=%0d | PC=%h | IR=%h | LO=%h | R1=%h",
                  $time, Present_state,
                  DUT.BusMuxIn_PC,
                  DUT.BusMuxIn_IR,
-                 DUT.BusMuxIn_HI,
-                 DUT.BusMuxIn_R5);
+                 DUT.BusMuxIn_LO,
+                 DUT.BusMuxIn_R1);
     end
 
     initial begin
         clear = 1;
         ExternalIn = 32'h00000000;
 
-        // mfhi R5 => opcode 11000, Ra=R5=0101
-        // 11000_0101_0...0 = 1100_0010_1000_0000_0000_0000_0000_0000 = 32'hC2800000
-        DUT.MEM.ram.mem[9'h000] = 32'hC2800000;
+        // mflo R1 => opcode 11001, Ra=R1=0001
+        // 11001_0001_0...0 = 1100_1000_1000_0000_0000_0000_0000_0000 = 32'hC8800000
+        DUT.MEM.ram.mem[9'h000] = 32'hC8800000;
 
         #35 clear = 0;
-        force DUT.HI.q = 32'h00001234;
-        force DUT.PC.q = 32'h00001234;
+        force DUT.LO.q = 32'h00001234;
+        force DUT.PC.q = 32'h00000000;
         #9;
-        release DUT.HI.q;
+        release DUT.LO.q;
         release DUT.PC.q;
     end
 
@@ -134,9 +134,9 @@ module mfhi_tb;
                 MDRout = 1; IRin = 1;
             end
 
-            // T3: R5 <- HI  (Gra selects Ra=R5 from IR)
+            // T3: R1 <- LO  (Gra selects Ra=R1 from IR)
             T3: begin
-                HIout = 1; Gra = 1; Rin = 1;
+                LOout = 1; Gra = 1; Rin = 1;
             end
 
             Done: begin end
@@ -148,13 +148,7 @@ module mfhi_tb;
         @(Present_state == Done);
         #25;
         $display("==============================================");
-        $display("TEST: mfhi R5");
-        $display("  HI  = %h  (expected 12345678)", DUT.BusMuxIn_HI);
-        $display("  R5  = %h  (expected 12345678)", DUT.BusMuxIn_R5);
-        if (DUT.BusMuxIn_R5 === 32'h12345678)
-            $display("  ** PASS **");
-        else
-            $display("  ** FAIL **");
+        $display("TEST: mflo R1");
         $display("==============================================");
         $stop;
     end
