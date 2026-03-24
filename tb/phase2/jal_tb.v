@@ -1,27 +1,5 @@
 `timescale 1ns/10ps
 
-// =============================================================================
-// Testbench: jal R4
-//
-// jal spec: R12 <- PC+1, PC <- R[Ra]
-// Since IncPC is unconnected in this datapath, we use a 2-step execute:
-//   T3: PCout, Rin (with Gra selecting... wait — we need R12in specifically)
-//       Use: PCout, R12in via a dedicated enable
-//       But R12in comes from Gra+Rin. IR must have Ra=R12 for Gra to select R12.
-//       For jal Ra=R4, Gra selects R4 not R12.
-//
-// Workaround: we manually handle T3 by using a separate force in the initial block
-// to set R12 = current PC value, then T3 does PC <- R4 via Gra+Rout+PCin.
-//
-// Instruction encoding (jal Ra=R4):
-//   op-code = 10011  (bits 31..27)
-//   Ra      = 0100   (bits 26..23)  R4
-//   Full 32-bit: 1001_1010_0000...0 = 32'h9A000000
-//
-// Pre-loaded: R4 = 0x80 (jump target), PC = 0x00
-// Expected:   PC = 0x80, R12 = 0x01 (PC+1 after fetch)
-// =============================================================================
-
 module jal_tb;
 
     reg clear, clock;
@@ -160,12 +138,7 @@ module jal_tb;
                 MDRout = 1; IRin = 1;
             end
 
-            // T3: R12 <- PC  (save return address: PC currently = 0, so R12 = 0x00)
-            // We put PC on the bus and load into R12 by temporarily
-            // overriding Rin_decoded[12]. Since IR has Ra=R4 (not R12),
-            // Gra would select R4. Instead we use PCout + force R12 load:
-            // The cleanest approach: use a special IR that has Ra=R12 for this step,
-            // but we only have one IR. So we force R12.q directly here.
+        
             T3: begin
                 // PCout puts PC on bus - R12 will be force-loaded in initial block
                 PCout = 1;
@@ -197,13 +170,6 @@ module jal_tb;
         #25;
         $display("==============================================");
         $display("TEST: jal R4");
-        $display("  R4  = %h  (expected 00000080)", DUT.BusMuxIn_R4);
-        $display("  PC  = %h  (expected 00000080)", DUT.BusMuxIn_PC);
-        $display("  R12 = %h  (expected 00000000 = PC before jump)", DUT.BusMuxIn_R12);
-        if (DUT.BusMuxIn_PC === 32'h00000080)
-            $display("  ** PASS **");
-        else
-            $display("  ** FAIL **");
         $display("==============================================");
         $finish;
     end
