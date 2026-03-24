@@ -151,7 +151,12 @@ module brnz_nt_tb;
             T3: begin Gra = 1; Rout = 1; CONin = 1; end
             T4: begin PCout = 1; Yin = 1; end
             T5: begin Cout = 1; ADD = 1; Zin = 1; end
-            T6: begin Zlowout = 1; PCin = 1; end
+            T6: begin
+                if (DUT.CON) begin
+                    Zlowout = 1;
+                    PCin    = 1;
+                end
+            end
             Done: begin end
         endcase
     end

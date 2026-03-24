@@ -2,12 +2,12 @@
 
 // =============================================================================
 // Testbench: brmi R3, 48
-// Encoding: 32'hA9B00030
-// Pre-loaded: R3=0xFFFFFFFF (-1, negative -> branch taken), PC=0
-// Expected: PC = 0+1+48 = 49 = 0x31
+// Waveform B: NOT TAKEN
+// Test Setup: R3 = 0x00000005 (positive), PC = 0, offset = 48
+// Expected: branch not taken, so PC = 0x00000001
 // =============================================================================
 
-module brmi_tb;
+module brmi_nt_tb;
 
     reg clear, clock;
 
@@ -70,7 +70,7 @@ module brmi_tb;
 
     initial begin
         $dumpfile("waveforms.vcd");
-        $dumpvars(0, brmi_tb);
+        $dumpvars(0, brmi_nt_tb);
     end
 
     initial begin
@@ -89,10 +89,10 @@ module brmi_tb;
         clear = 1;
         ExternalIn = 32'h00000000;
 
-        DUT.MEM.ram.mem[9'h000] = 32'hA9B00030; // brmi R3, 48
+        DUT.MEM.ram.mem[9'h000] = 32'hA9B80030; // brmi R3, 48
 
         #35 clear = 0;
-        force DUT.R3.q = 32'hFFFFFFFF;   // -1 (negative) -> branch taken
+        force DUT.R3.q = 32'h00000005;   // +5 (positive) -> brmi NOT taken
         force DUT.PC_reg.q = 32'h00000000;
         #9;
         release DUT.R3.q;
@@ -149,7 +149,12 @@ module brmi_tb;
             T3: begin Gra = 1; Rout = 1; CONin = 1; end
             T4: begin PCout = 1; Yin = 1; end
             T5: begin Cout = 1; ADD = 1; Zin = 1; end
-            T6: begin Zlowout = 1; PCin = 1; end
+            T6: begin
+                if (DUT.CON) begin
+                    Zlowout = 1;
+                    PCin    = 1;
+                end
+            end
             Done: begin end
         endcase
     end
@@ -158,11 +163,13 @@ module brmi_tb;
         @(Present_state == Done);
         #25;
         $display("==============================================");
-        $display("TEST: brmi R3, 48  (branch taken, R3=-1)");
-        $display("  R3  = %h  (expected ffffffff)", DUT.BusMuxIn_R3);
-        $display("  CON = %b  (expected 1)", DUT.CON);
-        $display("  PC  = %h  (expected 00000031)", DUT.BusMuxIn_PC);
-        if (DUT.BusMuxIn_PC === 32'h00000031)
+        $display("TEST: brmi R3, 48  (branch NOT taken, R3=5)");
+        $display("  R3  = %h  (expected 00000005)", DUT.BusMuxIn_R3);
+        $display("  CON = %b  (expected 0)", DUT.CON);
+        $display("  PC  = %h  (expected 00000001)", DUT.BusMuxIn_PC);
+        if ((DUT.BusMuxIn_R3 === 32'h00000005) &&
+            (DUT.CON === 1'b0) &&
+            (DUT.BusMuxIn_PC === 32'h00000001))
             $display("  ** PASS **");
         else
             $display("  ** FAIL **");
