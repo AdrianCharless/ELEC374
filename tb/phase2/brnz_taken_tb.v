@@ -92,20 +92,20 @@ module brnz_tb;
         DUT.MEM.ram.mem[9'h000] = 32'hA9900030; // brnz R3, 48
 
         #35 clear = 0;
-        force DUT.R3.q = 32'h00000005;  // nonzero -> branch taken
-        force DUT.PC.q = 32'h00000000;
+        force DUT.R3.q = 32'h00000005;   // nonzero -> branch taken
+        force DUT.PC_reg.q = 32'h00000000;
         #9;
         release DUT.R3.q;
-        release DUT.PC.q;
+        release DUT.PC_reg.q;
     end
 
     // Simulate PC+1 after fetch since IncPC is unconnected
     initial begin
         @(Present_state == T2);
         @(negedge clock);
-        force DUT.PC.q = 32'h00000001;
+        force DUT.PC_reg.q = 32'h00000001;
         @(negedge clock);
-        release DUT.PC.q;
+        release DUT.PC_reg.q;
     end
 
     always @(posedge clock) begin
