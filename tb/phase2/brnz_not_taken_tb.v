@@ -91,7 +91,7 @@ module brnz_nt_tb;
         ExternalIn = 32'h00000000;
 
         // brnz R3, 48 = 32'hA9C00030
-        DUT.MEM.ram.mem[9'h000] = 32'hA9C00030;
+        DUT.MEM.ram.mem[9'h000] = 32'hA9C80030;
 
         #35 clear = 0;
         force DUT.R3.q = 32'h00000000;   // R3 = 0 -> branch NOT taken
