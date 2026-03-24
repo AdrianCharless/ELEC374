@@ -92,7 +92,7 @@ module andi_tb;
         DUT.MEM.ram.mem[9'h000] = 32'h53A00071;
  
         #35 clear = 0;
-        force DUT.R4.q = 32'h000000F3;
+        force DUT.R4.q = 32'h00000014;
         force DUT.PC.q = 32'h00000000;
         #9;
         release DUT.R4.q;
