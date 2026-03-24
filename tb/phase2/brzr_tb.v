@@ -74,7 +74,7 @@ module brzr_tb;
     end
 
     initial begin
-        $dumpfile("waveforms_brzr.vcd");
+        $dumpfile("waveforms.vcd");
         $dumpvars(0, brzr_tb);
     end
 
@@ -174,7 +174,7 @@ module brzr_tb;
         else
             $display("  ** FAIL **");
         $display("==============================================");
-        $stop;
+        $finish;
     end
 
     initial begin

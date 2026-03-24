@@ -69,7 +69,7 @@ module brnz_tb;
     end
 
     initial begin
-        $dumpfile("waveforms_brnz.vcd");
+        $dumpfile("waveforms.vcd");
         $dumpvars(0, brnz_tb);
     end
 
@@ -167,7 +167,7 @@ module brnz_tb;
         else
             $display("  ** FAIL **");
         $display("==============================================");
-        $stop;
+        $finish;
     end
 
     initial begin
