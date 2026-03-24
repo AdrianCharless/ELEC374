@@ -69,7 +69,7 @@ module brmi_tb;
     end
 
     initial begin
-        $dumpfile("waveforms_brmi.vcd");
+        $dumpfile("waveforms.vcd");
         $dumpvars(0, brmi_tb);
     end
 
@@ -92,20 +92,20 @@ module brmi_tb;
         DUT.MEM.ram.mem[9'h000] = 32'hA9B00030; // brmi R3, 48
 
         #35 clear = 0;
-        force DUT.R3.q = 32'hFFFFFFFF;  // -1 (negative) -> branch taken
-        force DUT.PC.q = 32'h00000000;
+        force DUT.R3.q = 32'hFFFFFFFF;   // -1 (negative) -> branch taken
+        force DUT.PC_reg.q = 32'h00000000;
         #9;
         release DUT.R3.q;
-        release DUT.PC.q;
+        release DUT.PC_reg.q;
     end
 
     // Simulate PC+1 after fetch since IncPC is unconnected
     initial begin
         @(Present_state == T2);
         @(negedge clock);
-        force DUT.PC.q = 32'h00000001;
+        force DUT.PC_reg.q = 32'h00000001;
         @(negedge clock);
-        release DUT.PC.q;
+        release DUT.PC_reg.q;
     end
 
     always @(posedge clock) begin
@@ -159,7 +159,7 @@ module brmi_tb;
         #25;
         $display("==============================================");
         $display("TEST: brmi R3, 48  (branch taken, R3=-1)");
-        $display("  R3  = %h  (expected FFFFFFFF)", DUT.BusMuxIn_R3);
+        $display("  R3  = %h  (expected ffffffff)", DUT.BusMuxIn_R3);
         $display("  CON = %b  (expected 1)", DUT.CON);
         $display("  PC  = %h  (expected 00000031)", DUT.BusMuxIn_PC);
         if (DUT.BusMuxIn_PC === 32'h00000031)
@@ -167,7 +167,7 @@ module brmi_tb;
         else
             $display("  ** FAIL **");
         $display("==============================================");
-        $stop;
+        $finish;
     end
 
     initial begin
