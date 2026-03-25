@@ -7,7 +7,7 @@ module control_unit (
     input  wire        CON_FF,
 
     output wire Gra, Grb, Grc,
-    output wire Rin, Rout,
+    output wire Rin, Rout, R12in,
     output wire BAout, Cout,
 
     output wire PCout, Zlowout, Zhighout, MDRout,
@@ -37,9 +37,9 @@ module control_unit (
 
     // FSM instance (doug made this)
     control_unit_fsm FSM (
-        .clock(clock),
-        .reset(reset),
-        .stop(stop),
+        .Clock(clock),
+        .Reset(reset),
+        .Stop(stop),
         .IR(IR),
         .present_state(state)
     );
@@ -51,7 +51,7 @@ module control_unit (
         .CON_FF(CON_FF),
 
         .Gra(Gra), .Grb(Grb), .Grc(Grc),
-        .Rin(Rin), .Rout(Rout),
+        .Rin(Rin), .Rout(Rout), .R12in(R12in),
         .BAout(BAout), .Cout(Cout),
 
         .PCout(PCout), .Zlowout(Zlowout), .Zhighout(Zhighout), .MDRout(MDRout),

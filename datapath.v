@@ -4,7 +4,7 @@ module datapath(
 
     // control signals
     input Gra, Grb, Grc,
-    input Rin, Rout,
+    input Rin, Rout, R12in,
     input BAout,
     input Cout,
 
@@ -94,7 +94,7 @@ Register R8(clear,clock,Rin_decoded[8],BusMuxOut,BusMuxIn_R8);
 Register R9(clear,clock,Rin_decoded[9],BusMuxOut,BusMuxIn_R9);
 Register R10(clear,clock,Rin_decoded[10],BusMuxOut,BusMuxIn_R10);
 Register R11(clear,clock,Rin_decoded[11],BusMuxOut,BusMuxIn_R11);
-Register R12(clear,clock,Rin_decoded[12],BusMuxOut,BusMuxIn_R12);
+Register R12(clear,clock,(Rin_decoded[12] | R12in),BusMuxOut,BusMuxIn_R12);
 Register R13(clear,clock,Rin_decoded[13],BusMuxOut,BusMuxIn_R13);
 Register R14(clear,clock,Rin_decoded[14],BusMuxOut,BusMuxIn_R14);
 Register R15(clear,clock,Rin_decoded[15],BusMuxOut,BusMuxIn_R15);

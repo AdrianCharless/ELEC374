@@ -1,11 +1,11 @@
 `timescale 1ns/10ps
 
-module brzr_tb;
+module jal_tb;
 
     reg clear, clock;
 
     reg Gra, Grb, Grc;
-    reg Rin, Rout, BAout, Cout;
+    reg Rin, Rout, BAout, Cout, R12in;
 
     reg PCout, Zlowout, Zhighout, MDRout;
     reg HIout, LOout, InPortout;
@@ -35,38 +35,23 @@ module brzr_tb;
                T2      = 4'd5,
                T3      = 4'd6,
                T4      = 4'd7,
-               T5      = 4'd8,
-               T6      = 4'd9,
-               Done    = 4'd10;
+               Done    = 4'd8;
 
     reg [3:0] Present_state = Default;
 
     datapath DUT (
-        .clear(clear),
-        .clock(clock),
-
+        .clear(clear), .clock(clock),
         .Gra(Gra), .Grb(Grb), .Grc(Grc),
-        .Rin(Rin), .Rout(Rout),
-        .BAout(BAout), .Cout(Cout),
-
+        .Rin(Rin), .Rout(Rout), .BAout(BAout), .Cout(Cout), .R12in(R12in),
         .PCout(PCout), .Zlowout(Zlowout), .Zhighout(Zhighout), .MDRout(MDRout),
         .HIout(HIout), .LOout(LOout), .InPortout(InPortout),
-
         .PCin(PCin), .IRin(IRin), .Yin(Yin), .Zin(Zin),
         .HIin(HIin), .LOin(LOin), .OutPortin(OutPortin),
-
-        .MARin(MARin), .MDRin(MDRin),
-        .Read(Read), .Write(Write),
-        .IncPC(IncPC),
-
+        .MARin(MARin), .MDRin(MDRin), .Read(Read), .Write(Write), .IncPC(IncPC),
         .ADD(ADD), .SUB(SUB), .AND(AND), .OR(OR),
-        .NEG(NEG), .NOT(NOT),
-        .SHR(SHR), .SHRA(SHRA), .SHL(SHL),
-        .ROR(ROR), .ROL(ROL),
-        .MUL(MUL), .DIV(DIV),
-
-        .CONin(CONin),
-        .ExternalIn(ExternalIn)
+        .NEG(NEG), .NOT(NOT), .SHR(SHR), .SHRA(SHRA), .SHL(SHL),
+        .ROR(ROR), .ROL(ROL), .MUL(MUL), .DIV(DIV),
+        .CONin(CONin), .ExternalIn(ExternalIn)
     );
 
     initial begin
@@ -76,30 +61,34 @@ module brzr_tb;
 
     initial begin
         $dumpfile("waveforms.vcd");
-        $dumpvars(0, brzr_tb);
+        $dumpvars(0, jal_tb);
     end
 
     initial begin
-        $monitor(
-            "time=%0t | state=%0d | PC=%h | IR=%h | R3=%h | Zlo=%h | CON=%b",
-            $time,
-            Present_state,
-            DUT.BusMuxIn_PC,
-            DUT.BusMuxIn_IR,     // ← the wire driven by the IR register output
-            DUT.BusMuxIn_R3,
-            DUT.BusMuxIn_Zlow,
-            DUT.CON
-        );
+        $monitor("time=%0t | state=%0d | PC=%h | IR=%h | R5=%h | R12=%h",
+                 $time, Present_state,
+                 DUT.BusMuxIn_PC,
+                 DUT.BusMuxIn_IR,
+                 DUT.BusMuxIn_R5,
+                 DUT.BusMuxIn_R12);
     end
 
     initial begin
         clear = 1;
         ExternalIn = 32'h00000000;
 
-        // Replace this with the actual encoding for: brzr R3,48
-        DUT.MEM.mem[9'h000] = 32'b10010_0011_0000_0000000000000110000;
+        // jal R5 => opcode 10011, Ra=R5=0101
+        // 10011_0101_0...0 = 32'h9A800000
+        DUT.MEM.ram.mem[9'h010] = 32'h9A800000;
 
-        #15 clear = 0;
+        #35 clear = 0;
+        force DUT.R5.q  = 32'h000000FF;  // jump target
+        force DUT.R12.q = 32'h00000000;  // return address reg, set to PC+1 in T3
+        force DUT.PC_reg.q  = 32'h00000010;  // PC=0x10, fetch hits mem[0x10] — load mem there if needed
+        #9;
+        release DUT.R5.q;
+        release DUT.R12.q;
+        release DUT.PC_reg.q;
     end
 
     always @(posedge clock) begin
@@ -111,9 +100,7 @@ module brzr_tb;
             T1      : Present_state = T2;
             T2      : Present_state = T3;
             T3      : Present_state = T4;
-            T4      : Present_state = T5;
-            T5      : Present_state = T6;
-            T6      : Present_state = Done;
+            T4      : Present_state = Done;
             Done    : Present_state = Done;
             default : Present_state = Done;
         endcase
@@ -122,6 +109,7 @@ module brzr_tb;
     always @(Present_state) begin
         Gra = 0;        Grb = 0;        Grc = 0;
         Rin = 0;        Rout = 0;       BAout = 0;      Cout = 0;
+        R12in = 0;
 
         PCout = 0;      Zlowout = 0;    Zhighout = 0;   MDRout = 0;
         HIout = 0;      LOout = 0;      InPortout = 0;
@@ -142,85 +130,48 @@ module brzr_tb;
         CONin = 0;
 
         case (Present_state)
+            Init1a: begin end
+            Init1b: begin end
 
-            // preload R3 = 0 so brzr is taken
-            Init1a: begin
-                ExternalIn  = 32'h00000000;
-                InPortout   = 1;   // put ExternalIn on bus
-                Gra         = 1;   // select Ra from IR (set IR bits so Ra=R3 if needed)
-                Rin         = 1;   // R3 <- bus
-            end
-
-            // Init1b: load PC = 0 (already 0 after clear, so this can be a no-op)
-            Init1b: begin
-                // PC is already 0 after clear; nothing needed
-                // If you need a specific value, use InPortout + PCin:
-                ExternalIn  = 32'h00000000;
-                InPortout   = 1;
-                PCin        = 1;
-            end
-
-            // T0: MAR <- PC ; Z <- PC + 1
+            // T0: MAR <- PC, PC <- PC + 1 (0x10 -> 0x11)
             T0: begin
-                PCout = 1;
-                MARin = 1;
-                Yin   = 1;   // Y <- PC (latch for ALU A input)
+                PCout = 1; MARin = 1; IncPC = 1;
             end
 
-            // T1: PC <- Zlow ; MDR <- M[MAR]
+            // T1: MDR <- M[MAR]
             T1: begin
-                Zlowout = 1;
-                PCin    = 1;
-                Read    = 1;
-                MDRin   = 1;
+                Read = 1; MDRin = 1;
             end
 
             // T2: IR <- MDR
             T2: begin
-                MDRout = 1;
-                IRin   = 1;
+                MDRout = 1; IRin = 1;
             end
 
-            // T3: Gra, Rout, CONin
-            // R3 -> Bus, evaluate brzr, store result in CON
+            // T3: R12 <- PC (PC is now 0x11 after IncPC in T0)
             T3: begin
-                Gra   = 1;
-                Rout  = 1;
-                CONin = 1;
-            end
-
-            // T4: PCout, Yin
-            T4: begin
                 PCout = 1;
-                Yin   = 1;
+                R12in = 1;
             end
 
-            // T5: Cout, ADD, Zin
-            // Z <- PC + 48
-            T5: begin
-                Cout = 1;
-                ADD  = 1;
-                Zin  = 1;
+            // T4: PC <- R5 (R5 = 0xFF)
+            T4: begin
+                Gra = 1; Rout = 1; PCin = 1;
             end
 
-            // T6: Zlowout, PCin
-            // should only update PC if CON = 1
-            T6: begin
-                Zlowout = 1;
-                PCin = DUT.CON;
-            end
+            Done: begin end
 
-            Done: begin
-                $display("Final PC  = %h", DUT.BusMuxIn_PC);
-                $display("Final R3  = %h", DUT.BusMuxIn_R3);
-                $display("Final CON = %b", DUT.CON);
-                $display("Expected for taken brzr with PC=0, offset=48: PC should go 0 -> 1 -> 49 (0x31)");
-                #20 $finish;
-            end
         endcase
     end
 
-
+    initial begin
+        @(Present_state == Done);
+        #25;
+        $display("jal R5 result:");
+        $display("  R12 = %h  (expected 00000011)", DUT.BusMuxIn_R12);  // PC was 0x10, IncPC -> 0x11
+        $display("  PC  = %h  (expected 000000ff)", DUT.BusMuxIn_PC);   // R5 = 0xFF
+        $finish;
+    end
 
     initial begin
         #127500;

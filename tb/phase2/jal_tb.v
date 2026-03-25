@@ -5,7 +5,7 @@ module jal_tb;
     reg clear, clock;
 
     reg Gra, Grb, Grc;
-    reg Rin, Rout, BAout, Cout;
+    reg Rin, Rout, BAout, Cout, R12in;
 
     reg PCout, Zlowout, Zhighout, MDRout;
     reg HIout, LOout, InPortout;
@@ -42,7 +42,7 @@ module jal_tb;
     datapath DUT (
         .clear(clear), .clock(clock),
         .Gra(Gra), .Grb(Grb), .Grc(Grc),
-        .Rin(Rin), .Rout(Rout), .BAout(BAout), .Cout(Cout),
+        .Rin(Rin), .Rout(Rout), .BAout(BAout), .Cout(Cout), .R12in(R12in),
         .PCout(PCout), .Zlowout(Zlowout), .Zhighout(Zhighout), .MDRout(MDRout),
         .HIout(HIout), .LOout(LOout), .InPortout(InPortout),
         .PCin(PCin), .IRin(IRin), .Yin(Yin), .Zin(Zin),
@@ -84,32 +84,11 @@ module jal_tb;
         #35 clear = 0;
         force DUT.R5.q  = 32'h00000050;  // jump target
         force DUT.R12.q = 32'h00000000;  // return address reg, will be set in T3
-        force DUT.PC.q  = 32'h00000000;  // PC=0 so fetch hits mem[0]
+        force DUT.PC_reg.q  = 32'h00000000;  // PC=0 so fetch hits mem[0]
         #9;
         release DUT.R5.q;
         release DUT.R12.q;
-        release DUT.PC.q;
-    end
-
-    // Simulate PC+1=4 after fetch (IncPC unconnected)
-    // PC should be 4 when T3 saves it into R12
-    initial begin
-        @(Present_state == T2);
-        @(negedge clock);
-        force DUT.PC.q = 32'h00000004;
-        @(negedge clock);
-        release DUT.PC.q;
-    end
-
-    // T3: R12 <- PC  (capture return address = 4)
-    // IR has Ra=R5 so Gra would select R5, not R12
-    // We use force to load PC value directly into R12
-    initial begin
-        @(Present_state == T3);
-        #1;
-        force DUT.R12.q = DUT.BusMuxIn_PC;
-        @(Present_state == T4);
-        release DUT.R12.q;
+        release DUT.PC_reg.q;
     end
 
     always @(posedge clock) begin
@@ -130,6 +109,7 @@ module jal_tb;
     always @(Present_state) begin
         Gra = 0;        Grb = 0;        Grc = 0;
         Rin = 0;        Rout = 0;       BAout = 0;      Cout = 0;
+        R12in = 0;
 
         PCout = 0;      Zlowout = 0;    Zhighout = 0;   MDRout = 0;
         HIout = 0;      LOout = 0;      InPortout = 0;
@@ -154,7 +134,7 @@ module jal_tb;
             Init1b: begin end
 
             T0: begin
-                PCout = 1; MARin = 1;
+                PCout = 1; MARin = 1; IncPC = 1;
             end
 
             T1: begin
@@ -168,6 +148,7 @@ module jal_tb;
             // T3: R12 <- PC  (return address saved via force in initial block)
             T3: begin
                 PCout = 1;
+                R12in = 1;
             end
 
             // T4: PC <- R5  (Gra selects Ra=R5 from IR)
@@ -184,7 +165,7 @@ module jal_tb;
         @(Present_state == Done);
         #25;
         $display("jal R5 result:");
-        $display("  R12 = %h  (expected 00000004)", DUT.BusMuxIn_R12);
+        $display("  R12 = %h  (expected 00000001)", DUT.BusMuxIn_R12);
         $display("  PC  = %h  (expected 00000050)", DUT.BusMuxIn_PC);
         $stop;
     end
