@@ -3,7 +3,6 @@
 module control_unit_signals(
     input  wire [6:0] state,
     input  wire [31:0] IR,
-    input  wire        CON_FF,
 
     output reg Gra, Grb, Grc,
     output reg Rin, Rout, R12in,
@@ -181,9 +180,12 @@ module control_unit_signals(
                 PCout = 1;
                 MARin = 1;
                 IncPC = 1;
+                Zin   = 1;
             end
 
             S_FETCH1: begin
+                Zlowout = 1;
+                PCin    = 1;
                 Read  = 1;
                 MDRin = 1;
             end
