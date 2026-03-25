@@ -1,3 +1,8 @@
-waveforms.vcd
+# Simulation outputs
+*.vcd
+*.out
 
+# Specific files (optional but explicit)
+waveforms.vcd
 simulation_bin.out
+sim.out
