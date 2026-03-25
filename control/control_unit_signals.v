@@ -3,6 +3,7 @@
 module control_unit_signals(
     input  wire [6:0] state,
     input  wire [31:0] IR,
+    input  wire        CON_FF,
 
     output reg Gra, Grb, Grc,
     output reg Rin, Rout, R12in,

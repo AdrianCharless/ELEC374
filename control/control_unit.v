@@ -4,6 +4,7 @@ module control_unit (
     input  wire        reset,
     input  wire        stop,
     input  wire [31:0] IR,
+    input  wire        CON_FF,
 
     output wire Gra, Grb, Grc,
     output wire Rin, Rout, R12in,
@@ -26,6 +27,7 @@ module control_unit (
     output wire ROR, ROL,
     output wire MUL, DIV,
 
+    output wire CONin,
     output wire [6:0] present_state
 );
 
@@ -45,6 +47,7 @@ module control_unit (
     control_unit_signals SIG (
         .state(state),
         .IR(IR),
+        .CON_FF(CON_FF),
 
         .Gra(Gra), .Grb(Grb), .Grc(Grc),
         .Rin(Rin), .Rout(Rout), .R12in(R12in),
