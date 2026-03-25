@@ -99,10 +99,10 @@ module brzr_tb;
 
         #35 clear = 0;
         force DUT.R3.q = 32'h00000000;  // R3=0 -> branch taken
-        force DUT.PC.q = 32'h00000000;
+        force DUT.PC_reg.q = 32'h00000000;
         #9;
         release DUT.R3.q;
-        release DUT.PC.q;
+        release DUT.PC_reg.q;
     end
 
     // Force PC=1 after fetch (T2) so branch computes PC+1+C correctly
@@ -110,9 +110,9 @@ module brzr_tb;
     initial begin
         @(Present_state == T2);
         @(negedge clock);
-        force DUT.PC.q = 32'h00000001;
+        force DUT.PC_reg.q = 32'h00000001;
         @(negedge clock);
-        release DUT.PC.q;
+        release DUT.PC_reg.q;
     end
 
     always @(posedge clock) begin
