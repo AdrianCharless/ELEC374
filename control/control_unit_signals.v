@@ -567,7 +567,7 @@ module control_unit_signals(
             // T3: latch branch condition from Ra into CON_FF
             // T4: Y ← PC
             // T5: Z ← PC + C(IR)
-            // T6: PC ← Zlow  (datapath gates PCin with CON internally)
+            // T6: PC ← Zlow only if CON_FF is 1 (if branch is taken)
             S_BR3: begin
                 Gra   = 1;
                 Rout  = 1;
@@ -584,7 +584,7 @@ module control_unit_signals(
             end
             S_BR6: begin
                 Zlowout = 1;
-                PCin    = 1;
+                PCin    = CON_FF;
             end
 
             // ── JR ──────────────────────────────────────────────

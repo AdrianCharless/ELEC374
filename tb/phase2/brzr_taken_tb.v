@@ -7,11 +7,9 @@
 // Pre-loaded: R3=0 (branch taken), PC=0
 // Expected: PC = PC+1+C = 0+1+48 = 49 = 0x31
 //
-// Note: IncPC is unconnected in this datapath so PC does not auto-increment
-// during fetch. We force PC=1 after T2 (fetch done) to simulate PC+1,
-// so that T4 (PCout,Yin) puts 1 into Y and T5 computes 1+48=0x31.
+// Note: In this datapath, IncPC is connected to the PC module and increments
+// the PC internally. Fetch therefore does NOT use Z to compute PC+1.
 // =============================================================================
-
 module brzr_tb;
 
     reg clear, clock;
@@ -105,16 +103,6 @@ module brzr_tb;
         release DUT.PC_reg.q;
     end
 
-    // Force PC=1 after fetch (T2) so branch computes PC+1+C correctly
-    // IncPC is unconnected so we simulate the +1 here
-    initial begin
-        @(Present_state == T2);
-        @(negedge clock);
-        force DUT.PC_reg.q = 32'h00000001;
-        @(negedge clock);
-        release DUT.PC_reg.q;
-    end
-
     always @(posedge clock) begin
         case (Present_state)
             Default : Present_state = Init1a;
@@ -133,33 +121,75 @@ module brzr_tb;
     end
 
     always @(Present_state) begin
-        Gra = 0;    Grb = 0;    Grc = 0;
-        Rin = 0;    Rout = 0;   BAout = 0;  Cout = 0;
-        PCout = 0;  Zlowout = 0; Zhighout = 0; MDRout = 0;
-        HIout = 0;  LOout = 0;  InPortout = 0;
-        PCin = 0;   IRin = 0;   Yin = 0;    Zin = 0;
-        HIin = 0;   LOin = 0;   OutPortin = 0;
-        MARin = 0;  MDRin = 0;
-        Read = 0;   Write = 0;  IncPC = 0;
-        ADD = 0;    SUB = 0;    AND = 0;    OR = 0;
-        NEG = 0;    NOT = 0;
-        SHR = 0;    SHRA = 0;   SHL = 0;
-        ROR = 0;    ROL = 0;    MUL = 0;    DIV = 0;
-        CONin = 0;
+    Gra = 0;    Grb = 0;    Grc = 0;
+    Rin = 0;    Rout = 0;   BAout = 0;  Cout = 0;
+    PCout = 0;  Zlowout = 0; Zhighout = 0; MDRout = 0;
+    HIout = 0;  LOout = 0;  InPortout = 0;
+    PCin = 0;   IRin = 0;   Yin = 0;    Zin = 0;
+    HIin = 0;   LOin = 0;   OutPortin = 0;
+    MARin = 0;  MDRin = 0;
+    Read = 0;   Write = 0;  IncPC = 0;
+    ADD = 0;    SUB = 0;    AND = 0;    OR = 0;
+    NEG = 0;    NOT = 0;
+    SHR = 0;    SHRA = 0;   SHL = 0;
+    ROR = 0;    ROL = 0;    MUL = 0;    DIV = 0;
+    CONin = 0;
 
-        case (Present_state)
-            Init1a: begin end
-            Init1b: begin end
-            T0: begin PCout = 1; MARin = 1; IncPC = 1; Zin = 1; end
-            T1: begin Zlowout = 1; PCin = 1; Read = 1; MDRin = 1; end
-            T2: begin MDRout = 1; IRin = 1; end
-            T3: begin Gra = 1; Rout = 1; CONin = 1; end
-            T4: begin PCout = 1; Yin = 1; end
-            T5: begin Cout = 1; ADD = 1; Zin = 1; end
-            T6: begin Zlowout = 1; PCin = 1; end
-            Done: begin end
-        endcase
-    end
+    case (Present_state)
+        Init1a: begin end
+        Init1b: begin end
+
+        // Fetch:
+        // MAR <- PC, PC <- PC + 1
+        T0: begin
+            PCout = 1;
+            MARin = 1;
+            IncPC = 1;
+        end
+
+        // Memory read into MDR
+        T1: begin
+            Read = 1;
+            MDRin = 1;
+        end
+
+        // IR <- MDR
+        T2: begin
+            MDRout = 1;
+            IRin = 1;
+        end
+
+        // Evaluate branch condition using R3
+        T3: begin
+            Gra = 1;
+            Rout = 1;
+            CONin = 1;
+        end
+
+        // Y <- PC  (PC is already PC+1 here)
+        T4: begin
+            PCout = 1;
+            Yin = 1;
+        end
+
+        // Z <- Y + C
+        T5: begin
+            Cout = 1;
+            ADD = 1;
+            Zin = 1;
+        end
+
+        // If CON=1, PC <- Zlow
+        T6: begin
+            if (DUT.CON) begin
+                Zlowout = 1;
+                PCin    = 1;
+            end
+        end
+
+        Done: begin end
+    endcase
+end
 
     initial begin
         @(Present_state == Done);

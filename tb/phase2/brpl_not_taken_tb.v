@@ -101,15 +101,6 @@ module brpl_nt_tb;
         release DUT.PC_reg.q;
     end
 
-    // Simulate PC+1 after fetch since IncPC is unconnected
-    initial begin
-        @(Present_state == T2);
-        @(negedge clock);
-        force DUT.PC_reg.q = 32'h00000001;
-        @(negedge clock);
-        release DUT.PC_reg.q;
-    end
-
     always @(posedge clock) begin
         case (Present_state)
             Default : Present_state = Init1a;
@@ -145,8 +136,8 @@ module brpl_nt_tb;
         case (Present_state)
             Init1a: begin end
             Init1b: begin end
-            T0: begin PCout = 1; MARin = 1; IncPC = 1; Zin = 1; end
-            T1: begin Zlowout = 1; PCin = 1; Read = 1; MDRin = 1; end
+            T0: begin PCout = 1; MARin = 1; IncPC = 1; end
+            T1: begin Read = 1; MDRin = 1; end
             T2: begin MDRout = 1; IRin = 1; end
             T3: begin Gra = 1; Rout = 1; CONin = 1; end
             T4: begin PCout = 1; Yin = 1; end
