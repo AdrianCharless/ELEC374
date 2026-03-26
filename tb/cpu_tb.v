@@ -151,13 +151,13 @@ initial begin
  
     $display("\n--- registers after ---");
     $display("R0  = %h  (expect 00000614)", `R0);
-    $display("R1  = %h  (expect 80000007)", `R1);
+    $display("R1  = %h  (expect 00000000)", `R1);
     $display("R2  = %h  (expect 00000004)", `R2);
     $display("R3  = %h  (expect 00000019)", `R3);
     $display("R4  = %h  (expect 00006800)", `R4);
-    $display("R5  = %h  (expect 00000008)", `R5);
+    $display("R5  = %h  (expect 00000680)", `R5);
     $display("R6  = %h  (expect 000000AF)", `R6);
-    $display("R7  = %h  (expect 0000006C)", `R7);
+    $display("R7  = %h  (expect 00000007)", `R7);
     $display("R8  = %h  (expect 00000009)", `R8);
     $display("R9  = %h  (expect 00000015)", `R9);
     $display("R10 = %h  (expect 000000B2)", `R10);
@@ -171,13 +171,13 @@ initial begin
  
     $display("\n--- pass/fail ---");
     if (`R0  !== 32'h00000614) $display("FAIL R0  got %h", `R0);  else $display("PASS R0");
-    if (`R1  !== 32'h80000007) $display("FAIL R1  got %h", `R1);  else $display("PASS R1");
+    if (`R1  !== 32'h00000000) $display("FAIL R1  got %h", `R1);  else $display("PASS R1");
     if (`R2  !== 32'h00000004) $display("FAIL R2  got %h", `R2);  else $display("PASS R2");
     if (`R3  !== 32'h00000019) $display("FAIL R3  got %h", `R3);  else $display("PASS R3");
     if (`R4  !== 32'h00006800) $display("FAIL R4  got %h", `R4);  else $display("PASS R4");
-    if (`R5  !== 32'h00000008) $display("FAIL R5  got %h", `R5);  else $display("PASS R5");
+    if (`R5  !== 32'h00000680) $display("FAIL R5  got %h", `R5);  else $display("PASS R5");
     if (`R6  !== 32'h000000AF) $display("FAIL R6  got %h", `R6);  else $display("PASS R6");
-    if (`R7  !== 32'h0000006C) $display("FAIL R7  got %h", `R7);  else $display("PASS R7");
+    if (`R7  !== 32'h00000007) $display("FAIL R7  got %h", `R7);  else $display("PASS R7");
     if (`R8  !== 32'h00000009) $display("FAIL R8  got %h", `R8);  else $display("PASS R8");
     if (`R9  !== 32'h00000015) $display("FAIL R9  got %h", `R9);  else $display("PASS R9");
     if (`R10 !== 32'h000000B2) $display("FAIL R10 got %h", `R10); else $display("PASS R10");
