@@ -31,10 +31,13 @@ module cpu (
     wire        CON_FF_fb;
     wire [6:0]  present_state;
  
-    localparam [6:0] S_BR6 = 7'd69;
-    wire PCin_to_dp;
-    assign PCin_to_dp = (present_state == S_BR6) ? (PCin & CON_FF_fb) : PCin;
- 
+
+    // this is already handled in control unit so datapath wiring should be .PCin(PCin) - doug
+
+    // localparam [6:0] S_BR6 = 7'd69;
+    // wire PCin_to_dp;
+    // assign PCin_to_dp = (present_state == S_BR6) ? (PCin & CON_FF_fb) : PCin;
+
     assign Run = (present_state != 7'd4);
  
     control_unit CU (
@@ -64,7 +67,9 @@ module cpu (
         .BAout(BAout), .Cout(Cout),
         .PCout(PCout), .Zlowout(Zlowout), .Zhighout(Zhighout), .MDRout(MDRout),
         .HIout(HIout), .LOout(LOout), .InPortout(InPortout),
-        .PCin(PCin_to_dp), .IRin(IRin), .Yin(Yin), .Zin(Zin),
+        // .PCin(PCin_to_dp),
+        .PCin(PCin),
+        .IRin(IRin), .Yin(Yin), .Zin(Zin),
         .HIin(HIin), .LOin(LOin), .OutPortin(OutPortin),
         .MARin(MARin), .MDRin(MDRin), .Read(Read), .Write(Write), .IncPC(IncPC),
         .ADD(ADD), .SUB(SUB), .AND(AND), .OR(OR),

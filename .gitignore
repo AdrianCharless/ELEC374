@@ -6,3 +6,5 @@
 waveforms.vcd
 simulation_bin.out
 sim.out
+run.ps1
+demo_tb.v

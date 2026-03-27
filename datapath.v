@@ -28,7 +28,13 @@ module datapath(
 
     input CONin,
 
-    input [31:0] ExternalIn
+    input [31:0] ExternalIn,
+
+    // these signals were instantiated in cpu.v but never added here
+    // i wired them appropriately at the end of the file just above endmodule
+    output [31:0] IR_out,
+    output CON_FF_out,
+    output [31:0] OutPort
 );
 
 wire [31:0] BusMuxOut;
@@ -237,5 +243,9 @@ BUS BUSMUX(
     .InPortout(InPortout), .Cout(Cout),
     .BusMuxOut(BusMuxOut)
 );
+
+assign IR_out     = BusMuxIn_IR;
+assign CON_FF_out = CON;
+assign OutPort    = OutPortData;
 
 endmodule

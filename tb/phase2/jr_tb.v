@@ -95,10 +95,10 @@ module jr_tb;
         // Pre-load: PC=0 (so fetch hits mem[0]), R12=0xFF (jump target)
         #35 clear = 0;
         force DUT.R12.q = 32'h00000050;
-        force DUT.PC.q  = 32'h00000004;  // PC=0 so MAR=0 fetches the instruction
+        force DUT.PC_reg.q  = 32'h00000004;  // PC=0 so MAR=0 fetches the instruction
         #9;
         release DUT.R12.q;
-        release DUT.PC.q;
+        release DUT.PC_reg.q;
     end
 
     always @(posedge clock) begin
