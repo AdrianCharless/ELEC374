@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module cpu_tb_phase4;
+module phase4_tb;
 
 reg        clock, reset, stop;
 reg [31:0] ExternalIn;
@@ -309,7 +309,7 @@ end
 
 initial begin
     $dumpfile("waveforms.vcd");
-    $dumpvars(0, cpu_tb_phase4);
+    $dumpvars(0, phase4_tb);
 end
 
 endmodule
