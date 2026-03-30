@@ -1,0 +1,131 @@
+`timescale 1ns/1ps
+
+module phase4_tb;
+
+    reg        clk;
+    reg        reset;
+    reg        stop;
+    reg [31:0] ExternalIn;
+
+    wire [31:0] OutPort;
+    wire        Run;
+
+    cpu uut (
+        .clock      (clk),
+        .reset      (reset),
+        .stop       (stop),
+        .ExternalIn (ExternalIn),
+        .OutPort    (OutPort),
+        .Run        (Run)
+    );
+
+    initial clk = 0;
+    always #5 clk = ~clk;
+
+    initial $monitor("time=%0t | OutPort=0x%h | Run=%b", $time, OutPort, Run);
+
+    task load_memory;
+    begin
+        force uut.DP.MEM.ram.mem[9'h000] = 32'h8A800043;
+        force uut.DP.MEM.ram.mem[9'h001] = 32'h8AA80006;
+        force uut.DP.MEM.ram.mem[9'h002] = 32'h82000089;
+        force uut.DP.MEM.ram.mem[9'h003] = 32'h8A200004;
+        force uut.DP.MEM.ram.mem[9'h004] = 32'h8027FFF8;
+        force uut.DP.MEM.ram.mem[9'h005] = 32'h89000004;
+        force uut.DP.MEM.ram.mem[9'h006] = 32'h8A800087;
+        force uut.DP.MEM.ram.mem[9'h007] = 32'hA82B0003;
+        force uut.DP.MEM.ram.mem[9'h008] = 32'h8AA80005;
+        force uut.DP.MEM.ram.mem[9'h009] = 32'h80AFFFFD;
+        force uut.DP.MEM.ram.mem[9'h00A] = 32'hD0000000;
+        force uut.DP.MEM.ram.mem[9'h00B] = 32'hA80A0002;
+        force uut.DP.MEM.ram.mem[9'h00C] = 32'h89A80007;
+        force uut.DP.MEM.ram.mem[9'h00D] = 32'h8B9FFFFC;
+        force uut.DP.MEM.ram.mem[9'h00E] = 32'h03A90000;
+        force uut.DP.MEM.ram.mem[9'h00F] = 32'h48880003;
+        force uut.DP.MEM.ram.mem[9'h010] = 32'h70880000;
+        force uut.DP.MEM.ram.mem[9'h011] = 32'h78880000;
+        force uut.DP.MEM.ram.mem[9'h012] = 32'h5088000F;
+        force uut.DP.MEM.ram.mem[9'h013] = 32'h3A010000;
+        force uut.DP.MEM.ram.mem[9'h014] = 32'h58A00005;
+        force uut.DP.MEM.ram.mem[9'h015] = 32'h2A090000;
+        force uut.DP.MEM.ram.mem[9'h016] = 32'h22A90000;
+        force uut.DP.MEM.ram.mem[9'h017] = 32'h902800A3;
+        force uut.DP.MEM.ram.mem[9'h018] = 32'h42810000;
+        force uut.DP.MEM.ram.mem[9'h019] = 32'h1B900000;
+        force uut.DP.MEM.ram.mem[9'h01A] = 32'h12280000;
+        force uut.DP.MEM.ram.mem[9'h01B] = 32'h92380089;
+        force uut.DP.MEM.ram.mem[9'h01C] = 32'h082B8000;
+        force uut.DP.MEM.ram.mem[9'h01D] = 32'h32290000;
+        force uut.DP.MEM.ram.mem[9'h01E] = 32'h8B800007;
+        force uut.DP.MEM.ram.mem[9'h01F] = 32'h89800019;
+        force uut.DP.MEM.ram.mem[9'h020] = 32'h69B80000;
+        force uut.DP.MEM.ram.mem[9'h021] = 32'hC0800000;
+        force uut.DP.MEM.ram.mem[9'h022] = 32'hCB000000;
+        force uut.DP.MEM.ram.mem[9'h023] = 32'h61B80000;
+        force uut.DP.MEM.ram.mem[9'h024] = 32'h8C380002;
+        force uut.DP.MEM.ram.mem[9'h025] = 32'h8C9FFFFC;
+        force uut.DP.MEM.ram.mem[9'h026] = 32'h8D300003;
+        force uut.DP.MEM.ram.mem[9'h027] = 32'h8D880005;
+        force uut.DP.MEM.ram.mem[9'h028] = 32'h9D000000;
+        force uut.DP.MEM.ram.mem[9'h029] = 32'hB3000000;
+        force uut.DP.MEM.ram.mem[9'h02A] = 32'h90300077;
+        force uut.DP.MEM.ram.mem[9'h02B] = 32'h8980002E;
+        force uut.DP.MEM.ram.mem[9'h02C] = 32'h8A800001;
+        force uut.DP.MEM.ram.mem[9'h02D] = 32'h89000028;
+        force uut.DP.MEM.ram.mem[9'h02E] = 32'hBB000000;
+        force uut.DP.MEM.ram.mem[9'h02F] = 32'h8917FFFF;
+        force uut.DP.MEM.ram.mem[9'h030] = 32'hA8100008;
+        force uut.DP.MEM.ram.mem[9'h031] = 32'h83800088;
+        force uut.DP.MEM.ram.mem[9'h032] = 32'h8BBFFFFF;
+        force uut.DP.MEM.ram.mem[9'h033] = 32'hD0000000;
+        force uut.DP.MEM.ram.mem[9'h034] = 32'hA839FFFD;
+        force uut.DP.MEM.ram.mem[9'h035] = 32'h23328000;
+        force uut.DP.MEM.ram.mem[9'h036] = 32'hA831FFF7;
+        force uut.DP.MEM.ram.mem[9'h037] = 32'h83000077;
+        force uut.DP.MEM.ram.mem[9'h038] = 32'hA1800000;
+        force uut.DP.MEM.ram.mem[9'h039] = 32'h8B000063;
+        force uut.DP.MEM.ram.mem[9'h03A] = 32'hBB000000;
+        force uut.DP.MEM.ram.mem[9'h03B] = 32'hD8000000;
+        force uut.DP.MEM.ram.mem[9'h0B2] = 32'h07450000;
+        force uut.DP.MEM.ram.mem[9'h0B3] = 32'h0ECD8000;
+        force uut.DP.MEM.ram.mem[9'h0B4] = 32'h0F768000;
+        force uut.DP.MEM.ram.mem[9'h0B5] = 32'hA6000000;
+        force uut.DP.MEM.ram.mem[9'h089] = 32'h000000A7;
+        force uut.DP.MEM.ram.mem[9'h0A3] = 32'h00000068;
+        force uut.DP.MEM.ram.mem[9'h088] = 32'h00000003;
+    end
+    endtask
+
+    initial begin
+        reset      = 1;
+        stop       = 0;
+        ExternalIn = 32'h000000E0;
+        load_memory;
+        #20;
+        reset = 0;
+        #2000000;
+
+        $display("R0  expected=0x00000614  got=0x%h  %s", uut.DP.R0.BusMuxIn_R0,  (uut.DP.R0.BusMuxIn_R0  == 32'h00000614) ? "PASS":"FAIL");
+        $display("R1  expected=0x00000000  got=0x%h  %s", uut.DP.R1.BusMuxIn,     (uut.DP.R1.BusMuxIn     == 32'h00000000) ? "PASS":"FAIL");
+        $display("R2  expected=0x00000000  got=0x%h  %s", uut.DP.R2.BusMuxIn,     (uut.DP.R2.BusMuxIn     == 32'h00000000) ? "PASS":"FAIL");
+        $display("R3  expected=0x0000002E  got=0x%h  %s", uut.DP.R3.BusMuxIn,     (uut.DP.R3.BusMuxIn     == 32'h0000002E) ? "PASS":"FAIL");
+        $display("R4  expected=0x00006800  got=0x%h  %s", uut.DP.R4.BusMuxIn,     (uut.DP.R4.BusMuxIn     == 32'h00006800) ? "PASS":"FAIL");
+        $display("R5  expected=0x00000001  got=0x%h  %s", uut.DP.R5.BusMuxIn,     (uut.DP.R5.BusMuxIn     == 32'h00000001) ? "PASS":"FAIL");
+        $display("R6  expected=0x00000063  got=0x%h  %s", uut.DP.R6.BusMuxIn,     (uut.DP.R6.BusMuxIn     == 32'h00000063) ? "PASS":"FAIL");
+        $display("R7  expected=0x00000000  got=0x%h  %s", uut.DP.R7.BusMuxIn,     (uut.DP.R7.BusMuxIn     == 32'h00000000) ? "PASS":"FAIL");
+        $display("R8  expected=0x00000009  got=0x%h  %s", uut.DP.R8.BusMuxIn,     (uut.DP.R8.BusMuxIn     == 32'h00000009) ? "PASS":"FAIL");
+        $display("R9  expected=0x00000015  got=0x%h  %s", uut.DP.R9.BusMuxIn,     (uut.DP.R9.BusMuxIn     == 32'h00000015) ? "PASS":"FAIL");
+        $display("R10 expected=0x000000B2  got=0x%h  %s", uut.DP.R10.BusMuxIn,    (uut.DP.R10.BusMuxIn    == 32'h000000B2) ? "PASS":"FAIL");
+        $display("R11 expected=0x00000005  got=0x%h  %s", uut.DP.R11.BusMuxIn,    (uut.DP.R11.BusMuxIn    == 32'h00000005) ? "PASS":"FAIL");
+        $display("R12 expected=0x----0029  got=0x%h  %s", uut.DP.R12.BusMuxIn,    (uut.DP.R12.BusMuxIn[15:0] == 16'h0029) ? "PASS":"FAIL");
+        $display("R13 expected=0x00000010  got=0x%h  %s", uut.DP.R13.BusMuxIn,    (uut.DP.R13.BusMuxIn    == 32'h00000010) ? "PASS":"FAIL");
+        $display("R14 expected=0x000000AB  got=0x%h  %s", uut.DP.R14.BusMuxIn,    (uut.DP.R14.BusMuxIn    == 32'h000000AB) ? "PASS":"FAIL");
+        $display("HI  expected=0x00000004  got=0x%h  %s", uut.DP.HI.BusMuxIn,     (uut.DP.HI.BusMuxIn     == 32'h00000004) ? "PASS":"FAIL");
+        $display("LO  expected=0x00000003  got=0x%h  %s", uut.DP.LO.BusMuxIn,     (uut.DP.LO.BusMuxIn     == 32'h00000003) ? "PASS":"FAIL");
+        $display("OutPort expected=0x63    got=0x%h  %s", OutPort,                 (OutPort[7:0]           == 8'h63)        ? "PASS":"FAIL");
+        $display("Run     expected=0       got=%b    %s", Run,                     (Run                    == 1'b0)         ? "PASS":"FAIL");
+
+        $stop;
+    end
+
+endmodule
