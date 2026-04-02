@@ -19,9 +19,7 @@ cpu DUT (
 initial clock = 0;
 always #5 clock = ~clock;
 
-// ------------------------------------------------------------
 // instruction encoding helpers
-// ------------------------------------------------------------
 function [31:0] R_fmt;
     input [4:0] op;
     input [3:0] Ra, Rb, Rc;
@@ -63,9 +61,7 @@ function [31:0] M_fmt;
     end
 endfunction
 
-// ------------------------------------------------------------
 // shorthand for hierarchical signal access
-// ------------------------------------------------------------
 `define PC   DUT.DP.BusMuxIn_PC
 `define IR   DUT.DP.BusMuxIn_IR
 `define MAR  DUT.DP.MAR_Q
@@ -95,9 +91,7 @@ integer out_count;
 reg [31:0] out_log [0:63];
 reg [31:0] expected_out [0:40];
 
-// ------------------------------------------------------------
 // capture OutPort updates
-// ------------------------------------------------------------
 always @(OutPort) begin
     if (!reset) begin
         if (^OutPort !== 1'bx) begin
@@ -108,9 +102,7 @@ always @(OutPort) begin
     end
 end
 
-// ------------------------------------------------------------
 // main test
-// ------------------------------------------------------------
 initial begin
     stop      = 0;
     reset     = 1;
@@ -123,11 +115,9 @@ initial begin
     // required memory initialization for Phase 4
     `RAM[8'h89] = 32'h000000A7;
     `RAM[8'hA3] = 32'h00000068;
-    `RAM[8'h88] = 32'h0000FFFF;
+    `RAM[8'h88] = 32'h00000005;
 
-    // --------------------------------------------------------
     // program from Phase 3 up to jal
-    // --------------------------------------------------------
     `RAM[0]   = I_fmt(5'b10001, 4'd5,  4'd0,  19'd67);       // ldi R5, 0x43
     `RAM[1]   = I_fmt(5'b10001, 4'd5,  4'd5,  19'd6);        // ldi R5, 6(R5)
     `RAM[2]   = I_fmt(5'b10000, 4'd4,  4'd0,  19'd137);      // ld R4, 0x89
@@ -170,9 +160,7 @@ initial begin
     `RAM[39]  = I_fmt(5'b10001, 4'd11, 4'd1,  19'd5);        // ldi R11, 5(R1)
     `RAM[40]  = J_fmt(5'b10011, 4'd10);                      // jal R10
 
-    // --------------------------------------------------------
     // new Phase 4 code starts here at 0x29 (decimal 41)
-    // --------------------------------------------------------
     `RAM[41]  = J_fmt(5'b10110, 4'd6);                       // in R6
     `RAM[42]  = I_fmt(5'b10010, 4'd6,  4'd0,  19'd119);      // st 0x77, R6
     `RAM[43]  = I_fmt(5'b10001, 4'd3,  4'd0,  19'd46);       // ldi R3, 0x2E
@@ -216,7 +204,7 @@ initial begin
     expected_out[40] = 32'h00000063;
 
     $display("--- memory before ---");
-    $display("Mem[0x88] = %h (expect 0000FFFF)", `RAM[8'h88]);
+    $display("Mem[0x88] = %h (expect 00000005)", `RAM[8'h88]);
     $display("Mem[0x89] = %h (expect 000000A7)", `RAM[8'h89]);
     $display("Mem[0xA3] = %h (expect 00000068)", `RAM[8'hA3]);
     $display("ExternalIn = %h (expect 000000E0)", ExternalIn);
@@ -237,9 +225,7 @@ initial begin
             $display("WARNING: timed out, state = %0d", DUT.present_state);
     end
 
-    // --------------------------------------------------------
     // final register dump
-    // --------------------------------------------------------
     $display("\n--- registers after ---");
     $display("R0  = %h  (expect 00000614)", `R0);
     $display("R1  = %h  (expect 00000000)", `R1);
@@ -282,12 +268,12 @@ initial begin
 
     $display("\n--- memory after ---");
     $display("Mem[0x77] = %h  (expect 000000E0)", `RAM[8'h77]);
-    $display("Mem[0x88] = %h  (expect 0000FFFF)", `RAM[8'h88]);
+    $display("Mem[0x88] = %h  (expect 00000005)", `RAM[8'h88]);
     $display("Mem[0x89] = %h  (expect 0000006C)", `RAM[8'h89]);
     $display("Mem[0xA3] = %h  (expect 00000008)", `RAM[8'hA3]);
 
     if (`RAM[8'h77] !== 32'h000000E0) $display("FAIL Mem[0x77] got %h", `RAM[8'h77]); else $display("PASS Mem[0x77]");
-    if (`RAM[8'h88] !== 32'h0000FFFF) $display("FAIL Mem[0x88] got %h", `RAM[8'h88]); else $display("PASS Mem[0x88]");
+    if (`RAM[8'h88] !== 32'h00000005) $display("FAIL Mem[0x88] got %h", `RAM[8'h88]); else $display("PASS Mem[0x88]");
     if (`RAM[8'h89] !== 32'h0000006C) $display("FAIL Mem[0x89] got %h", `RAM[8'h89]); else $display("PASS Mem[0x89]");
     if (`RAM[8'hA3] !== 32'h00000008) $display("FAIL Mem[0xA3] got %h", `RAM[8'hA3]); else $display("PASS Mem[0xA3]");
 
@@ -304,7 +290,7 @@ initial begin
     end
 
     $display("\ndone. Run=%b state=%0d PC=%h IR=%h", Run, DUT.present_state, `PC, `IR);
-    $stop;
+    $finish;
 end
 
 initial begin
